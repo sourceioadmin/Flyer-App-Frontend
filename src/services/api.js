@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Backend configuration
 // Use environment variable for production, fallback to proxy for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = "https://flyerapi-fcebategg4cyg7by.centralindia-01.azurewebsites.net/api";
 const BASE_URL = '';
 
 // Debug logging
