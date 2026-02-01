@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Backend configuration
-// Use relative URLs to leverage Vite proxy for development
-const API_BASE_URL = '/api';
+// Use environment variable for production, fallback to proxy for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const BASE_URL = '';
 
 // Debug logging
