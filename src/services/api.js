@@ -11,6 +11,7 @@ if (!API_BASE_URL) {
 
 //remove after testing
 // Debug logging
+//remove after testing
 console.log('API Configuration:', {
   API_BASE_URL,
   mode: import.meta.env.MODE,
