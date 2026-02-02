@@ -9,6 +9,7 @@ if (!API_BASE_URL) {
   console.error('VITE_API_BASE_URL is not defined');
 }
 
+//remove after testing
 // Debug logging
 console.log('API Configuration:', {
   API_BASE_URL,
