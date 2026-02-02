@@ -2,13 +2,18 @@ import axios from 'axios';
 
 // Backend configuration
 // Use environment variable for production, fallback to proxy for development
-const API_BASE_URL = "https://flyerapi-fcebategg4cyg7by.centralindia-01.azurewebsites.net/api";
-const BASE_URL = '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Safety check (helps during debugging)
+if (!API_BASE_URL) {
+  console.error('VITE_API_BASE_URL is not defined');
+}
 
 // Debug logging
 console.log('API Configuration:', {
   API_BASE_URL,
-  currentHostname: window.location.hostname
+  mode: import.meta.env.MODE,
+  hostname: window.location.hostname,
 });
 
 const api = axios.create({
@@ -44,14 +49,9 @@ export const flyerAPI = {
     }
     return api.get(`/flyer/company/${companyId}`, { params });
   },
-  downloadFlyer: (flyerId) => `${API_BASE_URL}/flyer/download/${flyerId}`,
-  getFlyerImageUrl: (imagePath) => {
-    // Return the image path directly - Vite proxy handles /uploads routing to backend
-    if (imagePath && imagePath.startsWith('/uploads/')) {
-      return imagePath; // This will be proxied by Vite to the backend
-    }
-    return imagePath;
-  },
+  downloadFlyer: (flyerId) =>
+    api.get(`/flyer/download/${flyerId}`, { responseType: 'blob' }),
+  getFlyerImageUrl: (imagePath) => imagePath,
   deleteFlyer: (flyerId) => api.delete(`/flyer/${flyerId}`),
 };
 
