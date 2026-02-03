@@ -48,6 +48,7 @@ const AdminDashboard = () => {
       const normalized = response.data.map(item => ({
         id: item.Id,
         title: item.Title,
+        imageUrl: item.ImageUrl, // ✅ prefer this for rendering
         imagePath: item.ImagePath,
         companyId: item.CompanyId,
         companyName: item.CompanyName,
@@ -215,7 +216,7 @@ const AdminDashboard = () => {
 
   const handleImageClick = (flyer) => {
     setEnlargedImage({
-      url: flyerAPI.getFlyerImageUrl(flyer.imagePath),
+      url: flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath),
       title: flyer.title,
       companyName: flyer.companyName
     });
@@ -449,12 +450,12 @@ const AdminDashboard = () => {
             {allFlyers.map((flyer) => (
               <div key={flyer.id} className="flyer-row">
                 <img
-                  src={flyerAPI.getFlyerImageUrl(flyer.imagePath)}
+                  src={flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath)}
                   alt={flyer.title}
                   className="flyer-thumbnail"
                   onClick={() => handleImageClick(flyer)}
                   onError={(e) => {
-                    console.error('Failed to load image:', flyer.imagePath, e);
+                    console.error('Failed to load image:', { imageUrl: flyer.imageUrl, imagePath: flyer.imagePath }, e);
                     e.target.src = '/vite.svg'; // Fallback to a placeholder
                   }}
                   style={{ cursor: 'pointer' }}

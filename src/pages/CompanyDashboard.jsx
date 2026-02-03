@@ -103,6 +103,7 @@ const CompanyDashboard = () => {
       const normalized = response.data.map(item => ({
         id: item.Id,
         title: item.Title,
+        imageUrl: item.ImageUrl, // ✅ prefer this for rendering/sharing
         imagePath: item.ImagePath,
         companyId: item.CompanyId,
         companyName: item.CompanyName,
@@ -152,7 +153,7 @@ const CompanyDashboard = () => {
     setError('');
 
     try {
-      const imageUrl = flyerAPI.getFlyerImageUrl(flyer.imagePath);
+      const imageUrl = flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath);
       console.log('Fetching image for native share:', imageUrl);
       const response = await fetch(imageUrl);
       console.log('Fetch response:', response.status, response.ok);
@@ -160,7 +161,8 @@ const CompanyDashboard = () => {
 
       const blob = await response.blob();
       console.log('Blob created:', blob.size, blob.type);
-      const extension = flyer.imagePath.split('.').pop().toLowerCase();
+      const extension =
+        (flyer.imageUrl || flyer.imagePath || '').split('.').pop()?.toLowerCase() || 'jpg';
       const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
       const fileName = `${flyer.title.replace(/[^a-z0-9\s]/gi, '_')}.${extension}`;
       const file = new File([blob], fileName, { type: mimeType });
@@ -228,7 +230,7 @@ const CompanyDashboard = () => {
 
   const handleImageClick = (flyer) => {
     setEnlargedImage({
-      url: flyerAPI.getFlyerImageUrl(flyer.imagePath),
+      url: flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath),
       title: flyer.title
     });
   };
@@ -294,12 +296,12 @@ const CompanyDashboard = () => {
           {flyers.map((flyer) => (
             <div key={flyer.id} className="flyer-card">
               <img
-                src={flyerAPI.getFlyerImageUrl(flyer.imagePath)}
+                src={flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath)}
                 alt={flyer.title}
                 className="flyer-image"
                 onClick={() => handleImageClick(flyer)}
                 onError={(e) => {
-                  console.error('Failed to load image:', flyer.imagePath, e);
+                  console.error('Failed to load image:', { imageUrl: flyer.imageUrl, imagePath: flyer.imagePath }, e);
                   e.target.src = '/vite.svg'; // Fallback to a placeholder
                 }}
                 style={{ cursor: 'pointer' }}
