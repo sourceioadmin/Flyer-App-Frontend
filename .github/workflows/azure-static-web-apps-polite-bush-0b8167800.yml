@@ -35,6 +35,8 @@ jobs:
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
+        env:
+          VITE_API_BASE_URL: "https://flyerapi-fcebategg4cyg7by.centralindia-01.azurewebsites.net/api"
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_POLITE_BUSH_0B8167800 }}
           action: "upload"
@@ -56,4 +58,5 @@ jobs:
         uses: Azure/static-web-apps-deploy@v1
         with:
           action: "close"
+
 
