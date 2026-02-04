@@ -12,32 +12,95 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
       const user = JSON.parse(localStorage.getItem('user'));
       const shareMessage = `${flyer.title}\n\nShared from ${user?.companyName || 'Flyer App'}`;
 
-      // Try WhatsApp Web for desktop
-      if (!/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      // Fetch the image first
+      let imageUrl = flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath);
+      
+      // Ensure absolute URL for fetch (CORS-safe)
+      if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        // If relative URL, construct absolute URL
+        imageUrl = new URL(imageUrl, window.location.origin).href;
+      }
+      
+      console.log('Fetching image for WhatsApp share:', imageUrl);
+      
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const extension = (flyer.imageUrl || flyer.imagePath || '').split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+      const fileName = `${flyer.title.replace(/[^a-z0-9\s]/gi, '_')}.${extension}`;
+      const file = new File([blob], fileName, { type: mimeType });
+
+      // Use Web Share API with files (works for WhatsApp and other apps)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          console.log('Attempting to share with Web Share API (WhatsApp)...');
+          await navigator.share({
+            files: [file],
+            title: flyer.title,
+            text: shareMessage,
+          });
+          console.log('WhatsApp share successful!');
+          onClose();
+          return; // Success!
+        } catch (shareErr) {
+          console.error('Share error:', shareErr.name, shareErr.message);
+          if (shareErr.name === 'AbortError') {
+            // User cancelled - just close modal
+            onClose();
+            return;
+          }
+          // If share fails, fall through to URL method
+          console.log('Web Share API failed, falling back to URL method...');
+        }
+      }
+
+      // Fallback: Use WhatsApp URL (text only, no image)
+      // This is a limitation - WhatsApp URL doesn't support images
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Mobile: Try native WhatsApp app
+        const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(shareMessage)}`;
+        window.location.href = whatsappUrl;
+        
+        // Fallback if WhatsApp app not available
+        setTimeout(() => {
+          const whatsappWebUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
+          window.open(whatsappWebUrl, '_blank');
+        }, 1000);
+      } else {
         // Desktop: Try WhatsApp Web
         const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
         window.open(whatsappUrl, '_blank');
-        onClose();
-        onShare();
-        return;
       }
 
-      // Mobile: Try native WhatsApp app
-      const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(shareMessage)}`;
-      window.location.href = whatsappUrl;
-
-      // Fallback if WhatsApp app not available
-      setTimeout(() => {
-        const whatsappWebUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
-        window.open(whatsappWebUrl, '_blank');
-      }, 1000);
+      // Show alert that image needs to be attached manually
+      alert(
+        `WhatsApp opened with message.\n\n` +
+        `Note: Please attach the image manually from your device.\n\n` +
+        `For better experience, use the "More Options" button which supports image sharing.`
+      );
 
       onClose();
-      onShare();
     } catch (error) {
       console.error('WhatsApp share failed:', error);
-      // Fall back to native share
-      onShare();
+      let errorMessage = error.message || 'Unknown error';
+      
+      // Handle CORS or network errors specifically
+      if (error.message.includes('Failed to fetch') || error.message.includes('CORS') || error.name === 'TypeError') {
+        errorMessage = 'Unable to access image. This may be due to CORS restrictions.';
+      }
+      
+      alert(`Error: ${errorMessage}\n\nPlease try using the "More Options" button instead, or use the Download button.`);
+      // Don't call onShare() here to avoid triggering the fetch error again
+      onClose();
     }
   };
 
