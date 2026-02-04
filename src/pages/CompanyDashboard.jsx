@@ -284,13 +284,33 @@ const CompanyDashboard = () => {
   };
 
   const handleDownload = async (flyerId, title) => {
-    const downloadUrl = flyerAPI.downloadFlyer(flyerId);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `${title}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // Fetch the image blob from the API
+      const response = await flyerAPI.downloadFlyer(flyerId);
+      const blob = response.data;
+
+      if (!blob || blob.size === 0) {
+        throw new Error('Received empty image file');
+      }
+
+      // Create a blob URL for download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${title}.jpg`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up the blob URL after a short delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+    } catch (error) {
+      console.error('Download failed:', error);
+      setError('Failed to download image. Please try again.');
+    }
   };
 
   const handleShare = (flyer) => {
