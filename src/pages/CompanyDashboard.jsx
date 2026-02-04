@@ -12,11 +12,66 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
       const user = JSON.parse(localStorage.getItem('user'));
       const shareMessage = `${flyer.title}\n\nShared from ${user?.companyName || 'Flyer App'}`;
 
-      // Use API endpoint to download image (avoids CORS issues)
-      console.log('Fetching image via API for WhatsApp share, flyer ID:', flyer.id);
+      // Try to fetch image - first try download endpoint, then fall back to imageUrl
+      console.log('Fetching image for WhatsApp share, flyer ID:', flyer.id);
+      let blob;
 
-      const response = await flyerAPI.downloadFlyer(flyer.id);
-      const blob = response.data; // axios returns data in response.data for blob responses
+      try {
+        // Try API download endpoint first
+        const response = await flyerAPI.downloadFlyer(flyer.id);
+        blob = response.data;
+        console.log('Image fetched via download endpoint');
+      } catch (downloadError) {
+        // If download endpoint fails (404 or other), use imageUrl with canvas method (avoids CORS)
+        console.log('Download endpoint failed, trying imageUrl via canvas:', downloadError.response?.status || downloadError.message);
+
+        const imageUrl = flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath);
+        if (!imageUrl) {
+          throw new Error('No image URL available');
+        }
+
+        // Use canvas method to convert image to blob (works even with CORS restrictions)
+        blob = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous'; // Try to load with CORS
+
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Failed to convert image to blob'));
+                }
+              }, 'image/jpeg', 0.95);
+            } catch (err) {
+              reject(new Error(`Canvas conversion failed: ${err.message}`));
+            }
+          };
+
+          img.onerror = () => {
+            // If canvas method fails, try direct fetch as last resort
+            const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, window.location.origin).href;
+            fetch(absoluteUrl, { mode: 'cors', credentials: 'omit' })
+              .then(res => {
+                if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+                return res.blob();
+              })
+              .then(resolve)
+              .catch(reject);
+          };
+
+          img.src = imageUrl;
+        });
+
+        console.log('Image fetched via imageUrl (canvas method)');
+      }
 
       if (!blob || blob.size === 0) {
         throw new Error('Received empty image file');
@@ -248,10 +303,66 @@ const CompanyDashboard = () => {
     setError('');
 
     try {
-      // Use API endpoint to download image (avoids CORS issues)
-      console.log('Fetching image via API for native share, flyer ID:', flyer.id);
-      const response = await flyerAPI.downloadFlyer(flyer.id);
-      const blob = response.data; // axios returns data in response.data for blob responses
+      // Try to fetch image - first try download endpoint, then fall back to imageUrl
+      console.log('Fetching image for native share, flyer ID:', flyer.id);
+      let blob;
+
+      try {
+        // Try API download endpoint first
+        const response = await flyerAPI.downloadFlyer(flyer.id);
+        blob = response.data;
+        console.log('Image fetched via download endpoint');
+      } catch (downloadError) {
+        // If download endpoint fails (404 or other), use imageUrl with canvas method (avoids CORS)
+        console.log('Download endpoint failed, trying imageUrl via canvas:', downloadError.response?.status || downloadError.message);
+
+        const imageUrl = flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath);
+        if (!imageUrl) {
+          throw new Error('No image URL available');
+        }
+
+        // Use canvas method to convert image to blob (works even with CORS restrictions)
+        blob = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous'; // Try to load with CORS
+
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Failed to convert image to blob'));
+                }
+              }, 'image/jpeg', 0.95);
+            } catch (err) {
+              reject(new Error(`Canvas conversion failed: ${err.message}`));
+            }
+          };
+
+          img.onerror = () => {
+            // If canvas method fails, try direct fetch as last resort
+            const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, window.location.origin).href;
+            fetch(absoluteUrl, { mode: 'cors', credentials: 'omit' })
+              .then(res => {
+                if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+                return res.blob();
+              })
+              .then(resolve)
+              .catch(reject);
+          };
+
+          img.src = imageUrl;
+        });
+
+        console.log('Image fetched via imageUrl (canvas method)');
+      }
 
       if (!blob || blob.size === 0) {
         throw new Error('Received empty image file');
