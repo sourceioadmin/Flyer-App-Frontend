@@ -1,21 +1,33 @@
 import axios from 'axios';
 
 // Backend configuration
-// Use environment variable for production, fallback to proxy for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Use environment variable for production, fallback to auto-detect for development
+let API_BASE_URL;
 
-// Safety check (helps during debugging)
-if (!API_BASE_URL) {
-  console.error('VITE_API_BASE_URL is not defined');
+if (import.meta.env.VITE_API_BASE_URL) {
+  // Use environment variable if set
+  API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+} else {
+  // Auto-detect based on hostname
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    // On localhost, use proxy
+    API_BASE_URL = '/api';
+  } else {
+    // On network IP (e.g., 10.10.10.68), connect directly to backend
+    const protocol = window.location.protocol; // Use same protocol (https)
+    API_BASE_URL = `${protocol}//${hostname}:5001/api`;
+  }
 }
 
-//remove after testing
 // Debug logging
-//remove after testing
 console.log('API Configuration:', {
   API_BASE_URL,
   mode: import.meta.env.MODE,
   hostname: window.location.hostname,
+  protocol: window.location.protocol,
 });
 
 const api = axios.create({
