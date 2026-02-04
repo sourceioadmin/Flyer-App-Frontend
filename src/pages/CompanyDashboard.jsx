@@ -12,33 +12,40 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
       const user = JSON.parse(localStorage.getItem('user'));
       const shareMessage = `${flyer.title}\n\nShared from ${user?.companyName || 'Flyer App'}`;
 
-      // Fetch the image first
-      let imageUrl = flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath);
-      
-      // Ensure absolute URL for fetch (CORS-safe)
-      if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-        // If relative URL, construct absolute URL
-        imageUrl = new URL(imageUrl, window.location.origin).href;
-      }
-      
-      console.log('Fetching image for WhatsApp share:', imageUrl);
-      
-      const response = await fetch(imageUrl, {
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      // Use API endpoint to download image (avoids CORS issues)
+      console.log('Fetching image via API for WhatsApp share, flyer ID:', flyer.id);
+
+      const response = await flyerAPI.downloadFlyer(flyer.id);
+      const blob = response.data; // axios returns data in response.data for blob responses
+
+      if (!blob || blob.size === 0) {
+        throw new Error('Received empty image file');
       }
 
-      const blob = await response.blob();
+      console.log('Blob received:', blob.size, 'bytes, type:', blob.type);
+
+      // Determine file extension and MIME type
       const extension = (flyer.imageUrl || flyer.imagePath || '').split('.').pop()?.toLowerCase() || 'jpg';
       const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
       const fileName = `${flyer.title.replace(/[^a-z0-9\s]/gi, '_')}.${extension}`;
       const file = new File([blob], fileName, { type: mimeType });
 
+      console.log('File created:', fileName, 'type:', mimeType);
+
+      // Check if Web Share API is available
+      const isSecureContext = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+      const hasWebShareAPI = navigator.share && navigator.canShare;
+      const canShareFiles = hasWebShareAPI && navigator.canShare({ files: [file] });
+
+      console.log('Web Share API check:', {
+        isSecureContext,
+        hasWebShareAPI,
+        canShareFiles,
+        userAgent: navigator.userAgent
+      });
+
       // Use Web Share API with files (works for WhatsApp and other apps)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (canShareFiles) {
         try {
           console.log('Attempting to share with Web Share API (WhatsApp)...');
           await navigator.share({
@@ -59,17 +66,28 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
           // If share fails, fall through to URL method
           console.log('Web Share API failed, falling back to URL method...');
         }
+      } else {
+        console.log('Web Share API not available or cannot share files');
+        if (!isSecureContext) {
+          console.warn('Web Share API requires HTTPS (or localhost)');
+        }
+        if (!hasWebShareAPI) {
+          console.warn('Web Share API not supported in this browser');
+        }
+        if (hasWebShareAPI && !canShareFiles) {
+          console.warn('Web Share API cannot share files in this context');
+        }
       }
 
       // Fallback: Use WhatsApp URL (text only, no image)
       // This is a limitation - WhatsApp URL doesn't support images
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
+
       if (isMobile) {
         // Mobile: Try native WhatsApp app
         const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(shareMessage)}`;
         window.location.href = whatsappUrl;
-        
+
         // Fallback if WhatsApp app not available
         setTimeout(() => {
           const whatsappWebUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
@@ -91,14 +109,28 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
       onClose();
     } catch (error) {
       console.error('WhatsApp share failed:', error);
-      let errorMessage = error.message || 'Unknown error';
-      
-      // Handle CORS or network errors specifically
-      if (error.message.includes('Failed to fetch') || error.message.includes('CORS') || error.name === 'TypeError') {
-        errorMessage = 'Unable to access image. This may be due to CORS restrictions.';
+      let errorMessage = 'Unknown error';
+
+      // Handle axios errors
+      if (error.response) {
+        // Server responded with error status
+        errorMessage = `Server error: ${error.response.status} ${error.response.statusText || ''}`;
+      } else if (error.request) {
+        // Request made but no response received
+        errorMessage = 'Network error: Unable to connect to server. Please check your connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-      
-      alert(`Error: ${errorMessage}\n\nPlease try using the "More Options" button instead, or use the Download button.`);
+
+      // Handle CORS or network errors specifically
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS') || error.name === 'TypeError' || errorMessage.includes('Network Error') || errorMessage.includes('Network error')) {
+        errorMessage = 'Unable to access image. This may be due to network or CORS restrictions.';
+      }
+
+      // Only show alert if it's a real error (not user cancellation)
+      if (!errorMessage.includes('AbortError') && !errorMessage.includes('cancelled')) {
+        alert(`Error: ${errorMessage}\n\nPlease try using the "More Options" button instead, or use the Download button.`);
+      }
       // Don't call onShare() here to avoid triggering the fetch error again
       onClose();
     }
@@ -216,14 +248,16 @@ const CompanyDashboard = () => {
     setError('');
 
     try {
-      const imageUrl = flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath);
-      console.log('Fetching image for native share:', imageUrl);
-      const response = await fetch(imageUrl);
-      console.log('Fetch response:', response.status, response.ok);
-      if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+      // Use API endpoint to download image (avoids CORS issues)
+      console.log('Fetching image via API for native share, flyer ID:', flyer.id);
+      const response = await flyerAPI.downloadFlyer(flyer.id);
+      const blob = response.data; // axios returns data in response.data for blob responses
 
-      const blob = await response.blob();
-      console.log('Blob created:', blob.size, blob.type);
+      if (!blob || blob.size === 0) {
+        throw new Error('Received empty image file');
+      }
+
+      console.log('Blob created:', blob.size, 'bytes, type:', blob.type);
       const extension =
         (flyer.imageUrl || flyer.imagePath || '').split('.').pop()?.toLowerCase() || 'jpg';
       const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
@@ -283,9 +317,29 @@ const CompanyDashboard = () => {
 
     } catch (err) {
       console.error('Native share failed:', err);
-      const errorMessage = err.message || 'Unknown error';
-      setError(`Failed to share: ${errorMessage}. Please try the Download button instead.`);
-      alert(`Error: ${errorMessage}\n\nPlease try using the Download button instead.`);
+      let errorMessage = 'Unknown error';
+
+      // Handle axios errors
+      if (err.response) {
+        // Server responded with error status
+        errorMessage = `Server error: ${err.response.status} ${err.response.statusText || ''}`;
+      } else if (err.request) {
+        // Request made but no response received
+        errorMessage = 'Network error: Unable to connect to server. Please check your connection.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      // Handle CORS or network errors specifically
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS') || err.name === 'TypeError' || errorMessage.includes('Network Error') || errorMessage.includes('Network error')) {
+        errorMessage = 'Unable to access image. This may be due to network or CORS restrictions.';
+      }
+
+      // Only set error and show alert if it's a real error (not user cancellation)
+      if (!errorMessage.includes('AbortError') && !errorMessage.includes('cancelled')) {
+        setError(`Failed to share: ${errorMessage}. Please try the Download button instead.`);
+        alert(`Error: ${errorMessage}\n\nPlease try using the Download button instead.`);
+      }
     } finally {
       setSharingId(null);
     }
@@ -404,6 +458,7 @@ const CompanyDashboard = () => {
           onClose={() => {
             setShareModalOpen(false);
             setSelectedFlyer(null);
+            setError(''); // Clear any error state when closing modal
           }}
           onShare={() => handleNativeShare(selectedFlyer)}
         />
