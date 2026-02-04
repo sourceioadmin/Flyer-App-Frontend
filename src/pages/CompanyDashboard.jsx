@@ -285,31 +285,50 @@ const CompanyDashboard = () => {
 
   const handleDownload = async (flyerId, title) => {
     try {
-      // Fetch the image blob from the API
-      const response = await flyerAPI.downloadFlyer(flyerId);
-      const blob = response.data;
+      // Find the flyer object to get the imageUrl
+      const flyer = flyers.find(f => f.id === flyerId);
 
-      if (!blob || blob.size === 0) {
-        throw new Error('Received empty image file');
+      if (!flyer) {
+        throw new Error('Flyer not found');
       }
 
-      // Create a blob URL for download
-      const blobUrl = window.URL.createObjectURL(blob);
+      const imageUrl = flyer.imageUrl || flyer.imagePath;
+
+      if (!imageUrl) {
+        throw new Error('No image URL available for this flyer');
+      }
+
+      console.log('Downloading flyer:', flyerId, 'URL:', imageUrl);
+
+      // Determine file extension
+      const extension = imageUrl.split('.').pop()?.toLowerCase().split('?')[0] || 'jpg';
+      const fileName = `${title.replace(/[^a-z0-9\s]/gi, '_')}.${extension}`;
+
+      // For Azure Blob Storage URLs with SAS tokens, use direct link approach
+      // This bypasses CORS issues that occur with fetch()
       const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `${title}.jpg`;
+      link.href = imageUrl;
+      link.download = fileName;
+      link.target = '_blank'; // Fallback: open in new tab if download attribute doesn't work
+      link.rel = 'noopener noreferrer';
       link.style.display = 'none';
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      // Clean up the blob URL after a short delay
-      setTimeout(() => {
-        window.URL.revokeObjectURL(blobUrl);
-      }, 100);
+      console.log('Download initiated for:', fileName);
     } catch (error) {
       console.error('Download failed:', error);
-      setError('Failed to download image. Please try again.');
+      let errorMessage = 'Failed to download image';
+
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response) {
+        errorMessage = `Server error: ${error.response.status}`;
+      }
+
+      setError(`${errorMessage}. Please try again.`);
     }
   };
 
