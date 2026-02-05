@@ -15,10 +15,15 @@
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "/*.{css,js,jpg,png,gif,ico,svg,woff,woff2,ttf,eot}"]
   },
-  "responseOverrides": {
-    "404": {
-      "rewrite": "/index.html",
-      "statusCode": 200
-    }
+  "platform": {
+    "apiRuntime": "node:18"
+  },
+  "globalHeaders": {
+    "content-security-policy": "default-src https: 'unsafe-eval' 'unsafe-inline'; object-src 'none'"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".js": "text/javascript",
+    ".css": "text/css"
   }
 }

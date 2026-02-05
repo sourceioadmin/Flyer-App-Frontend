@@ -1,10 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import { copyFileSync } from 'fs'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), basicSsl()],
+  plugins: [
+    react(), 
+    basicSsl(),
+    {
+      name: 'copy-static-web-app-config',
+      closeBundle() {
+        copyFileSync('staticwebapp.config.json', 'dist/staticwebapp.config.json')
+      }
+    }
+  ],
   server: {
     host: '0.0.0.0', // Listen on all network interfaces
     port: 5173,
