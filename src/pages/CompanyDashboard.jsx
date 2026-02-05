@@ -701,7 +701,6 @@ const CompanyDashboard = () => {
                 title="Click to view full size"
               />
               <div className="flyer-info">
-                <h3>{flyer.title}</h3>
                 <p className="flyer-date">
                   {new Date(flyer.createdAt).toLocaleDateString()}
                 </p>
