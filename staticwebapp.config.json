@@ -1,10 +1,20 @@
 {
   "routes": [
     {
+      "route": "/assets/*",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
     }
   ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/*.{css,js,jpg,png,gif,ico,svg,woff,woff2,ttf,eot}"]
+  },
   "responseOverrides": {
     "404": {
       "rewrite": "/index.html",
