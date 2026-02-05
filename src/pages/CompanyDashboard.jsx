@@ -9,9 +9,6 @@ import './CompanyDashboard.css';
 const ShareModal = ({ flyer, onClose, onShare }) => {
   const handleWhatsAppShare = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const shareMessage = `${flyer.title}\n\nShared from ${user?.companyName || 'Flyer App'}`;
-
       // Try to fetch image - first try download endpoint, then fall back to imageUrl
       console.log('Fetching image for WhatsApp share, flyer ID:', flyer.id);
       let blob;
@@ -132,12 +129,11 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
         try {
           console.log('Attempting to share with Web Share API (WhatsApp)...');
 
-          // For WhatsApp specifically: Share with both files and text
+          // For WhatsApp specifically: Share only the image file
           // On mobile: When user selects WhatsApp and then selects a contact,
-          // both the image and message will be pre-filled and ready to send
+          // the image will be ready to send
           await navigator.share({
             files: [file],
-            text: shareMessage,
             title: flyer.title,
           });
 
@@ -169,17 +165,9 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
         }
       }
 
-      // Fallback: Download image and copy message to clipboard, then open WhatsApp
-      // This allows user to manually share image with pre-copied message
-      console.log('Using download + clipboard fallback...');
-
-      // Copy message to clipboard
-      try {
-        await navigator.clipboard.writeText(shareMessage);
-        console.log('Message copied to clipboard');
-      } catch (clipboardErr) {
-        console.warn('Failed to copy to clipboard:', clipboardErr);
-      }
+      // Fallback: Download image then open WhatsApp
+      // This allows user to manually share the downloaded image
+      console.log('Using download fallback...');
 
       // Download the image
       const blobUrl = window.URL.createObjectURL(blob);
@@ -193,34 +181,32 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
       window.URL.revokeObjectURL(blobUrl);
       console.log('Image downloaded:', fileName);
 
-      // Open WhatsApp with the message
+      // Open WhatsApp
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
       // Show instructions to user
       alert(
         'WhatsApp Sharing Instructions:\n\n' +
         '1. Image has been downloaded to your device\n' +
-        '2. Message has been copied to clipboard\n' +
-        '3. WhatsApp will now open\n' +
-        '4. Select a contact\n' +
-        '5. Paste the message (Ctrl+V or Cmd+V)\n' +
-        '6. Attach the downloaded image\n' +
-        '7. Send!'
+        '2. WhatsApp will now open\n' +
+        '3. Select a contact\n' +
+        '4. Attach the downloaded image\n' +
+        '5. Send!'
       );
 
       if (isMobile) {
         // Mobile: Try native WhatsApp app
-        const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(shareMessage)}`;
+        const whatsappUrl = `whatsapp://send`;
         window.location.href = whatsappUrl;
 
         // Fallback if WhatsApp app not available
         setTimeout(() => {
-          const whatsappWebUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
+          const whatsappWebUrl = `https://web.whatsapp.com/send`;
           window.open(whatsappWebUrl, '_blank');
         }, 1000);
       } else {
-        // Desktop: Try WhatsApp Web with message pre-filled
-        const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
+        // Desktop: Open WhatsApp Web
+        const whatsappUrl = `https://web.whatsapp.com/send`;
         window.open(whatsappUrl, '_blank');
       }
 
@@ -526,7 +512,6 @@ const CompanyDashboard = () => {
       const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
       const fileName = `${flyer.title.replace(/[^a-z0-9\s]/gi, '_')}.${extension}`;
       const file = new File([blob], fileName, { type: mimeType });
-      const shareMessage = `${flyer.title}\n\nShared from ${user?.companyName}`;
 
       console.log('Checking Web Share API support...');
       console.log('navigator.canShare:', navigator.canShare);
@@ -534,20 +519,11 @@ const CompanyDashboard = () => {
 
       // Try Web Share API (shows ALL apps: WhatsApp, Facebook, Instagram, LinkedIn, etc.)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        // Copy message to clipboard first so user can paste it as caption in WhatsApp
-        try {
-          await navigator.clipboard.writeText(shareMessage);
-          console.log('Message copied to clipboard for caption');
-        } catch (clipErr) {
-          console.warn('Failed to copy to clipboard:', clipErr);
-        }
-
         try {
           console.log('Attempting to share with Web Share API...');
-          // Share file with text - WhatsApp will show image preview with message
+          // Share only the image file
           await navigator.share({
             files: [file],
-            text: shareMessage,
             title: flyer.title,
           });
           console.log('Share successful!');
