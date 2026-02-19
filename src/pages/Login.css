@@ -17,6 +17,31 @@
   max-width: 400px;
 }
 
+.login-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  padding: 10px;
+  border-radius: 14px;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: fit-content;
+}
+
+.login-container .login-logo-wrap {
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-logo {
+  display: block;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
 .login-box h1,
 .login-card h1 {
   text-align: center;

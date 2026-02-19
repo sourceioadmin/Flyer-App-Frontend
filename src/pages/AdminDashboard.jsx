@@ -301,7 +301,12 @@ const AdminDashboard = () => {
       )}
 
       <div className="admin-header">
-        <h1>Admin Dashboard</h1>
+        <div className="admin-header-brand">
+          <span className="header-logo-wrap">
+            <img src="/flyer-logo.png" alt="Flyer App" className="header-logo" />
+          </span>
+          <h1>Admin Dashboard</h1>
+        </div>
         <button onClick={handleLogout} className="logout-btn">Logout</button>
       </div>
 

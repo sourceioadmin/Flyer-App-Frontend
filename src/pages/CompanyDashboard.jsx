@@ -1117,9 +1117,14 @@ const CompanyDashboard = () => {
       )}
 
       <div className="company-header">
-        <div>
-          <h1>{user?.companyName}</h1>
-          <p>Dashboard</p>
+        <div className="company-header-brand">
+          <span className="header-logo-wrap">
+            <img src="/flyer-logo.png" alt="Flyer App" className="header-logo" />
+          </span>
+          <div>
+            <h1>{user?.companyName}</h1>
+            <p>Dashboard</p>
+          </div>
         </div>
         <button onClick={handleLogout} className="logout-btn">Logout</button>
       </div>

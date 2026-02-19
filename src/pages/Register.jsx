@@ -74,6 +74,9 @@ const Register = () => {
   return (
     <div className="login-container">
       <div className="login-card">
+        <span className="login-logo-wrap">
+          <img src="/flyer-logo.png" alt="Flyer App" className="login-logo" />
+        </span>
         <h2>Company Registration</h2>
         <p>Create your company account to access flyers</p>
 
