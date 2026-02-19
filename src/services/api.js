@@ -69,4 +69,11 @@ export const flyerAPI = {
   deleteFlyer: (flyerId) => api.delete(`/flyer/${flyerId}`),
 };
 
+export const reviewAPI = {
+  addCustomer: (data) => api.post('/review/customer', data),
+  getCustomersByCompany: (companyId) => api.get(`/review/customers/${companyId}`),
+  getCustomer: (id) => api.get(`/review/customer/${id}`),
+  deactivateCustomer: (id) => api.delete(`/review/customer/${id}`),
+};
+
 export default api;

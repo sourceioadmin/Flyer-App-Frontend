@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { flyerAPI } from '../services/api';
+import { flyerAPI, reviewAPI, companyAPI } from '../services/api';
 import MonthNavigator from '../components/MonthNavigator';
 import './CompanyDashboard.css';
 
@@ -301,7 +301,462 @@ const ShareModal = ({ flyer, onClose, onShare }) => {
   );
 };
 
+// Message Status Badge Component
+const MessageStatusBadge = ({ sent, label }) => (
+  <span className={`msg-status-badge ${sent ? 'msg-sent' : 'msg-pending'}`}>
+    {sent ? '✓' : '○'} {label}
+  </span>
+);
+
+// Review Box Tab Component
+const ReviewBoxTab = ({ companyId }) => {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await reviewAPI.getCustomersByCompany(companyId);
+      const data = Array.isArray(response.data) ? response.data : [];
+      const normalized = data.map(item => ({
+        id: item.Id,
+        customerName: item.CustomerName,
+        phoneNumber: item.PhoneNumber,
+        companyId: item.CompanyId,
+        createdAt: item.CreatedAt,
+        day0Sent: item.Day0Sent,
+        day1Sent: item.Day1Sent,
+        day3Sent: item.Day3Sent,
+        isActive: item.IsActive,
+      }));
+      setCustomers(normalized);
+    } catch (err) {
+      console.error('Failed to load review customers:', err);
+      setErrorMsg('Failed to load review customers.');
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  // Auto-clear success message
+  useEffect(() => {
+    if (successMsg) {
+      const timer = setTimeout(() => setSuccessMsg(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMsg]);
+
+  // Auto-clear error message
+  useEffect(() => {
+    if (errorMsg) {
+      const timer = setTimeout(() => setErrorMsg(''), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMsg]);
+
+  const handleAddCustomer = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const trimmedName = customerName.trim();
+    const trimmedPhone = phoneNumber.trim();
+
+    if (!trimmedName || !trimmedPhone) {
+      setErrorMsg('Please fill in both Customer Name and Phone Number.');
+      return;
+    }
+
+    // Validate phone: digits only, at least 10 digits
+    if (!/^\d{10,15}$/.test(trimmedPhone)) {
+      setErrorMsg('Phone number must be 10-15 digits with country code (e.g., 919076006262).');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await reviewAPI.addCustomer({
+        CustomerName: trimmedName,
+        PhoneNumber: trimmedPhone,
+        CompanyId: companyId,
+      });
+      const item = response.data;
+      const newCustomer = {
+        id: item.Id,
+        customerName: item.CustomerName,
+        phoneNumber: item.PhoneNumber,
+        companyId: item.CompanyId,
+        createdAt: item.CreatedAt,
+        day0Sent: item.Day0Sent,
+        day1Sent: item.Day1Sent,
+        day3Sent: item.Day3Sent,
+        isActive: item.IsActive,
+      };
+      setCustomers(prev => [newCustomer, ...prev]);
+      setCustomerName('');
+      setPhoneNumber('');
+      setSuccessMsg(`Review request sent to ${trimmedName}!`);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error('Failed to add review customer:', err);
+      const msg = err.response?.data?.message || err.response?.data?.Message;
+      if (msg && msg.toLowerCase().includes('gbp review link')) {
+        setErrorMsg('Please configure your Google Review Link in the Settings tab before adding customers.');
+      } else if (err.response?.status === 400) {
+        setErrorMsg(msg || 'Invalid request. Please check your inputs.');
+      } else if (err.response?.status === 404) {
+        setErrorMsg(msg || 'Company not found.');
+      } else {
+        setErrorMsg('Failed to send review request. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeactivate = async (customerId, customerName) => {
+    if (!window.confirm(`Stop future review messages for ${customerName}?`)) return;
+    try {
+      await reviewAPI.deactivateCustomer(customerId);
+      setCustomers(prev =>
+        prev.map(c => c.id === customerId ? { ...c, isActive: false } : c)
+      );
+      setSuccessMsg(`Messages stopped for ${customerName}.`);
+    } catch (err) {
+      console.error('Failed to deactivate customer:', err);
+      setErrorMsg('Failed to stop messages. Please try again.');
+    }
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(customers.length / PAGE_SIZE);
+  const paginatedCustomers = customers.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  return (
+    <div className="review-box-container">
+      {/* Add Customer Form */}
+      <div className="review-form-card">
+        <h3 className="review-form-title">Send Review Request</h3>
+        <p className="review-form-subtitle">
+          Add customer details to automatically send WhatsApp review requests on Day 0, Day 1, and Day 3.
+        </p>
+        <form onSubmit={handleAddCustomer} className="review-form">
+          <div className="review-form-fields">
+            <div className="review-form-group">
+              <label htmlFor="customerName">Customer Name</label>
+              <input
+                id="customerName"
+                type="text"
+                placeholder="e.g., John Doe"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                disabled={submitting}
+                required
+              />
+            </div>
+            <div className="review-form-group">
+              <label htmlFor="phoneNumber">Phone Number (with country code)</label>
+              <input
+                id="phoneNumber"
+                type="tel"
+                placeholder="e.g., 919076006262"
+                value={phoneNumber}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setPhoneNumber(val);
+                }}
+                disabled={submitting}
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" className="btn-send-review" disabled={submitting}>
+            {submitting ? 'Sending...' : 'Send Review Request'}
+          </button>
+        </form>
+        {successMsg && <div className="review-success-msg">{successMsg}</div>}
+        {errorMsg && <div className="review-error-msg">{errorMsg}</div>}
+      </div>
+
+      {/* Automation Info */}
+      <div className="review-info-card">
+        <h4>How it works</h4>
+        <div className="review-timeline">
+          <div className="timeline-step">
+            <span className="timeline-dot day0"></span>
+            <div>
+              <strong>Day 0</strong>
+              <p>Sent immediately after adding</p>
+            </div>
+          </div>
+          <div className="timeline-connector"></div>
+          <div className="timeline-step">
+            <span className="timeline-dot day1"></span>
+            <div>
+              <strong>Day 1</strong>
+              <p>Follow-up after ~24 hours</p>
+            </div>
+          </div>
+          <div className="timeline-connector"></div>
+          <div className="timeline-step">
+            <span className="timeline-dot day3"></span>
+            <div>
+              <strong>Day 3</strong>
+              <p>Final reminder after ~72 hours</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer List */}
+      <div className="review-list-card">
+        <h3 className="review-list-title">Review Customers ({customers.length})</h3>
+
+        {loading && <p className="loading">Loading customers...</p>}
+
+        {!loading && customers.length === 0 && (
+          <div className="review-empty">
+            <p>No review customers added yet. Use the form above to send your first review request.</p>
+          </div>
+        )}
+
+        {!loading && paginatedCustomers.length > 0 && (
+          <>
+            {/* Desktop Table */}
+            <div className="review-table-wrapper">
+              <table className="review-table">
+                <thead>
+                  <tr>
+                    <th>Customer Name</th>
+                    <th>Phone Number</th>
+                    <th>Added Date</th>
+                    <th>Message Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedCustomers.map((customer) => (
+                    <tr key={customer.id} className={!customer.isActive ? 'row-inactive' : ''}>
+                      <td className="td-name">{customer.customerName}</td>
+                      <td className="td-phone">{customer.phoneNumber}</td>
+                      <td className="td-date">
+                        {new Date(customer.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="td-status">
+                        <div className="msg-status-group">
+                          <MessageStatusBadge sent={customer.day0Sent} label="Day 0" />
+                          <MessageStatusBadge sent={customer.day1Sent} label="Day 1" />
+                          <MessageStatusBadge sent={customer.day3Sent} label="Day 3" />
+                        </div>
+                      </td>
+                      <td className="td-actions">
+                        {customer.isActive ? (
+                          <button
+                            className="btn-stop-messages"
+                            onClick={() => handleDeactivate(customer.id, customer.customerName)}
+                          >
+                            Stop Messages
+                          </button>
+                        ) : (
+                          <span className="inactive-label">Stopped</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="review-cards-mobile">
+              {paginatedCustomers.map((customer) => (
+                <div key={customer.id} className={`review-card-mobile ${!customer.isActive ? 'card-inactive' : ''}`}>
+                  <div className="review-card-header-mobile">
+                    <strong>{customer.customerName}</strong>
+                    <span className="review-card-date">
+                      {new Date(customer.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="review-card-phone">{customer.phoneNumber}</div>
+                  <div className="msg-status-group">
+                    <MessageStatusBadge sent={customer.day0Sent} label="Day 0" />
+                    <MessageStatusBadge sent={customer.day1Sent} label="Day 1" />
+                    <MessageStatusBadge sent={customer.day3Sent} label="Day 3" />
+                  </div>
+                  <div className="review-card-actions-mobile">
+                    {customer.isActive ? (
+                      <button
+                        className="btn-stop-messages"
+                        onClick={() => handleDeactivate(customer.id, customer.customerName)}
+                      >
+                        Stop Messages
+                      </button>
+                    ) : (
+                      <span className="inactive-label">Stopped</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="review-pagination">
+                <button
+                  className="pagination-btn"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                >
+                  Previous
+                </button>
+                <span className="pagination-info">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  className="pagination-btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Settings Tab Component
+const SettingsTab = ({ companyId }) => {
+  const [gbpLink, setGbpLink] = useState('');
+  const [originalGbpLink, setOriginalGbpLink] = useState('');
+  const [companyData, setCompanyData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    const fetchCompany = async () => {
+      setLoading(true);
+      try {
+        const response = await companyAPI.getById(companyId);
+        const data = response.data;
+        setCompanyData(data);
+        const link = data.GbpReviewLink || data.gbpReviewLink || '';
+        setGbpLink(link);
+        setOriginalGbpLink(link);
+      } catch (err) {
+        console.error('Failed to load company settings:', err);
+        setErrorMsg('Failed to load company settings.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCompany();
+  }, [companyId]);
+
+  // Auto-clear success message
+  useEffect(() => {
+    if (successMsg) {
+      const timer = setTimeout(() => setSuccessMsg(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMsg]);
+
+  // Auto-clear error message
+  useEffect(() => {
+    if (errorMsg) {
+      const timer = setTimeout(() => setErrorMsg(''), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMsg]);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const trimmed = gbpLink.trim();
+    if (trimmed && !/^https?:\/\/.+/.test(trimmed)) {
+      setErrorMsg('Please enter a valid URL starting with http:// or https://');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const companyName = companyData?.Name || companyData?.name || '';
+      const contactEmail = companyData?.ContactEmail || companyData?.contactEmail || '';
+      await companyAPI.update(companyId, {
+        Name: companyName,
+        ContactEmail: contactEmail,
+        GbpReviewLink: trimmed,
+      });
+      setOriginalGbpLink(trimmed);
+      setSuccessMsg('Google Review Link saved successfully!');
+    } catch (err) {
+      console.error('Failed to save company settings:', err);
+      const msg = err.response?.data?.message || err.response?.data?.Message;
+      setErrorMsg(msg || 'Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasChanges = gbpLink.trim() !== originalGbpLink;
+
+  if (loading) {
+    return <p className="loading">Loading settings...</p>;
+  }
+
+  return (
+    <div className="settings-container">
+      <div className="settings-card">
+        <h3 className="settings-title">Company Settings</h3>
+        <form onSubmit={handleSave} className="settings-form">
+          <div className="settings-form-group">
+            <label htmlFor="gbpReviewLink">Google Review Link</label>
+            <p className="settings-help-text">
+              Your Google Business Profile review link. This must be configured before using the Review Box feature.
+            </p>
+            <input
+              id="gbpReviewLink"
+              type="url"
+              placeholder="https://search.google.com/local/writereview?placeid=..."
+              value={gbpLink}
+              onChange={(e) => setGbpLink(e.target.value)}
+              disabled={saving}
+            />
+          </div>
+          <button type="submit" className="btn-save-settings" disabled={saving || !hasChanges}>
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+        </form>
+        {successMsg && <div className="review-success-msg">{successMsg}</div>}
+        {errorMsg && <div className="review-error-msg">{errorMsg}</div>}
+      </div>
+    </div>
+  );
+};
+
 const CompanyDashboard = () => {
+  const [activeTab, setActiveTab] = useState('flyers');
   const [flyers, setFlyers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -664,67 +1119,107 @@ const CompanyDashboard = () => {
       <div className="company-header">
         <div>
           <h1>{user?.companyName}</h1>
-          <p>Your Flyers</p>
+          <p>Dashboard</p>
         </div>
         <button onClick={handleLogout} className="logout-btn">Logout</button>
       </div>
 
-      <MonthNavigator
-        currentYear={currentYear}
-        currentMonth={currentMonth}
-        onMonthChange={handleMonthChange}
-      />
-
-      <div className="company-content">
-        {loading && <p className="loading">Loading flyers...</p>}
-        {error && <p className="error-message">{error}</p>}
-
-        {!loading && flyers.length === 0 && (
-          <div className="no-flyers">
-            <p>No flyers available yet.</p>
-          </div>
-        )}
-
-        <div className="flyers-grid">
-          {flyers.map((flyer) => (
-            <div key={flyer.id} className="flyer-card">
-              <img
-                src={flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath)}
-                alt={flyer.title}
-                className="flyer-image"
-                onClick={() => handleImageClick(flyer)}
-                onError={(e) => {
-                  console.error('Failed to load image:', { imageUrl: flyer.imageUrl, imagePath: flyer.imagePath }, e);
-                  e.target.src = '/vite.svg'; // Fallback to a placeholder
-                }}
-                style={{ cursor: 'pointer' }}
-                title="Click to view full size"
-              />
-              <div className="flyer-info">
-                <p className="flyer-date">
-                  {new Date(flyer.createdAt).toLocaleDateString()}
-                </p>
-                <div className="flyer-actions">
-                  <button
-                    onClick={() => handleShare(flyer)}
-                    className="btn-share"
-                    disabled={sharingId === flyer.id}
-                    title="Share on WhatsApp"
-                  >
-                    {sharingId === flyer.id ? 'Preparing...' : 'Share on whatsapp'}
-                  </button>
-                  <button
-                    onClick={() => handleDownload(flyer.id, flyer.title)}
-                    className="btn-download"
-                  >
-                    ⬇️ Download
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Tab Navigation */}
+      <div className="tab-nav">
+        <button
+          className={`tab-btn ${activeTab === 'flyers' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('flyers')}
+        >
+          Flyers
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'reviewbox' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('reviewbox')}
+        >
+          Review Box
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'settings' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          Settings
+        </button>
       </div>
+
+      {/* Flyers Tab */}
+      {activeTab === 'flyers' && (
+        <>
+          <MonthNavigator
+            currentYear={currentYear}
+            currentMonth={currentMonth}
+            onMonthChange={handleMonthChange}
+          />
+          <div className="company-content">
+            {loading && <p className="loading">Loading flyers...</p>}
+            {error && <p className="error-message">{error}</p>}
+
+            {!loading && flyers.length === 0 && (
+              <div className="no-flyers">
+                <p>No flyers available yet.</p>
+              </div>
+            )}
+
+            <div className="flyers-grid">
+              {flyers.map((flyer) => (
+                <div key={flyer.id} className="flyer-card">
+                  <img
+                    src={flyer.imageUrl || flyerAPI.getFlyerImageUrl(flyer.imagePath)}
+                    alt={flyer.title}
+                    className="flyer-image"
+                    onClick={() => handleImageClick(flyer)}
+                    onError={(e) => {
+                      console.error('Failed to load image:', { imageUrl: flyer.imageUrl, imagePath: flyer.imagePath }, e);
+                      e.target.src = '/vite.svg';
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to view full size"
+                  />
+                  <div className="flyer-info">
+                    <p className="flyer-date">
+                      {new Date(flyer.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="flyer-actions">
+                      <button
+                        onClick={() => handleShare(flyer)}
+                        className="btn-share"
+                        disabled={sharingId === flyer.id}
+                        title="Share on WhatsApp"
+                      >
+                        {sharingId === flyer.id ? 'Preparing...' : 'Share on whatsapp'}
+                      </button>
+                      <button
+                        onClick={() => handleDownload(flyer.id, flyer.title)}
+                        className="btn-download"
+                      >
+                        ⬇️ Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Review Box Tab */}
+      {activeTab === 'reviewbox' && (
+        <div className="company-content">
+          <ReviewBoxTab companyId={user?.companyId} />
+        </div>
+      )}
+
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <div className="company-content">
+          <SettingsTab companyId={user?.companyId} />
+        </div>
+      )}
 
       {/* Share Modal */}
       {shareModalOpen && selectedFlyer && (
@@ -733,7 +1228,7 @@ const CompanyDashboard = () => {
           onClose={() => {
             setShareModalOpen(false);
             setSelectedFlyer(null);
-            setError(''); // Clear any error state when closing modal
+            setError('');
           }}
           onShare={() => handleNativeShare(selectedFlyer)}
         />

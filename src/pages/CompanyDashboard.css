@@ -475,3 +475,604 @@
     margin: 12px;
   }
 }
+
+/* ==========================================
+   Tab Navigation
+   ========================================== */
+.tab-nav {
+  display: flex;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 0 40px;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 14px 28px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  top: 2px;
+}
+
+.tab-btn:hover {
+  color: #667eea;
+  background: #f8f9ff;
+}
+
+.tab-btn.tab-active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+@media (max-width: 768px) {
+  .tab-nav {
+    padding: 0 16px;
+  }
+
+  .tab-btn {
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+}
+
+/* ==========================================
+   Review Box - Form Card
+   ========================================== */
+.review-box-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.review-form-card {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.review-form-title {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.review-form-subtitle {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.review-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review-form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+}
+
+.review-form-group input {
+  padding: 11px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.review-form-group input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.review-form-group input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.btn-send-review {
+  align-self: flex-start;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-send-review:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.btn-send-review:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .review-form-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-send-review {
+    width: 100%;
+  }
+}
+
+/* Success / Error Messages */
+.review-success-msg {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.review-error-msg {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ==========================================
+   Review Box - Info / Timeline Card
+   ========================================== */
+.review-info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.review-info-card h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.review-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.timeline-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeline-step p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.timeline-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timeline-dot.day0 {
+  background: #dbeafe;
+  border: 2px solid #3b82f6;
+}
+
+.timeline-dot.day1 {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+}
+
+.timeline-dot.day3 {
+  background: #d1fae5;
+  border: 2px solid #10b981;
+}
+
+.timeline-connector {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  min-width: 30px;
+  margin: 0 8px;
+}
+
+@media (max-width: 640px) {
+  .review-timeline {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .timeline-connector {
+    width: 2px;
+    height: 20px;
+    min-width: 2px;
+    margin: 0 0 0 17px;
+  }
+}
+
+/* ==========================================
+   Review Box - Customer List / Table
+   ========================================== */
+.review-list-card {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.review-list-title {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.review-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.review-empty p {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* Desktop Table */
+.review-table-wrapper {
+  overflow-x: auto;
+}
+
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.review-table thead th {
+  text-align: left;
+  padding: 12px 14px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.review-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s;
+}
+
+.review-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.review-table tbody tr.row-inactive {
+  opacity: 0.55;
+}
+
+.review-table td {
+  padding: 14px;
+  vertical-align: middle;
+}
+
+.td-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.td-phone {
+  color: #555;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.td-date {
+  color: #888;
+  white-space: nowrap;
+}
+
+.td-status {
+  white-space: nowrap;
+}
+
+.td-actions {
+  white-space: nowrap;
+}
+
+/* Message Status Badges */
+.msg-status-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.msg-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.msg-status-badge.msg-sent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.msg-status-badge.msg-pending {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+/* Action Buttons */
+.btn-stop-messages {
+  padding: 7px 14px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-stop-messages:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.inactive-label {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* Mobile Cards (hidden on desktop) */
+.review-cards-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .review-table-wrapper {
+    display: none;
+  }
+
+  .review-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .review-card-mobile {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .review-card-mobile.card-inactive {
+    opacity: 0.55;
+  }
+
+  .review-card-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .review-card-header-mobile strong {
+    font-size: 15px;
+    color: #333;
+  }
+
+  .review-card-date {
+    font-size: 13px;
+    color: #888;
+  }
+
+  .review-card-phone {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    color: #555;
+  }
+
+  .review-card-actions-mobile {
+    margin-top: 4px;
+  }
+}
+
+/* Pagination */
+.review-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.pagination-btn {
+  padding: 8px 18px;
+  background: white;
+  color: #667eea;
+  border: 1.5px solid #667eea;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #d1d5db;
+  color: #9ca3af;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* ==========================================
+   Settings Tab
+   ========================================== */
+.settings-container {
+  max-width: 640px;
+}
+
+.settings-card {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.settings-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+}
+
+.settings-help-text {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.settings-form-group input {
+  padding: 11px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.settings-form-group input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.settings-form-group input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.btn-save-settings {
+  align-self: flex-start;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-save-settings:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.btn-save-settings:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .settings-container {
+    max-width: 100%;
+  }
+
+  .btn-save-settings {
+    width: 100%;
+  }
+}
