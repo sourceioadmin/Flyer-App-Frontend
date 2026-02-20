@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Backend configuration
 // Use environment variable for production, fallback to auto-detect for development
@@ -10,11 +10,11 @@ if (import.meta.env.VITE_API_BASE_URL) {
 } else {
   // Auto-detect based on hostname
   const hostname = window.location.hostname;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-  
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+
   if (isLocalhost) {
     // On localhost, use proxy
-    API_BASE_URL = '/api';
+    API_BASE_URL = "/api";
   } else {
     // On network IP (e.g., 10.10.10.68), connect directly to backend
     const protocol = window.location.protocol; // Use same protocol (https)
@@ -23,7 +23,7 @@ if (import.meta.env.VITE_API_BASE_URL) {
 }
 
 // Debug logging
-console.log('API Configuration:', {
+console.log("API Configuration:", {
   API_BASE_URL,
   mode: import.meta.env.MODE,
   hostname: window.location.hostname,
@@ -35,26 +35,28 @@ const api = axios.create({
 });
 
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  register: (userData) => api.post('/auth/register', userData),
+  login: (email, password) => api.post("/Auth/login", { email, password }),
+  register: (userData) => api.post("/Auth/register", userData),
 };
 
 export const companyAPI = {
-  getAll: () => api.get('/company'),
+  getAll: () => api.get("/company"),
   getById: (id) => api.get(`/company/${id}`),
-  create: (companyData) => api.post('/company', companyData),
+  create: (companyData) => api.post("/company", companyData),
   update: (id, companyData) => api.put(`/company/${id}`, companyData),
   delete: (id) => api.delete(`/company/${id}`),
 };
 
 export const flyerAPI = {
-  getAll: (params) => api.get('/flyer', { params }),
-  uploadFlyer: (formData) => api.post('/flyer/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
-  updateFlyer: (id, formData) => api.put(`/flyer/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  getAll: (params) => api.get("/flyer", { params }),
+  uploadFlyer: (formData) =>
+    api.post("/flyer/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  updateFlyer: (id, formData) =>
+    api.put(`/flyer/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   getFlyersByCompany: (companyId, year, month) => {
     const params = {};
     if (year && month) {
@@ -64,14 +66,15 @@ export const flyerAPI = {
     return api.get(`/flyer/company/${companyId}`, { params });
   },
   downloadFlyer: (flyerId) =>
-    api.get(`/flyer/download/${flyerId}`, { responseType: 'blob' }),
+    api.get(`/flyer/download/${flyerId}`, { responseType: "blob" }),
   getFlyerImageUrl: (imagePath) => imagePath,
   deleteFlyer: (flyerId) => api.delete(`/flyer/${flyerId}`),
 };
 
 export const reviewAPI = {
-  addCustomer: (data) => api.post('/review/customer', data),
-  getCustomersByCompany: (companyId) => api.get(`/review/customers/${companyId}`),
+  addCustomer: (data) => api.post("/review/customer", data),
+  getCustomersByCompany: (companyId) =>
+    api.get(`/review/customers/${companyId}`),
   getCustomer: (id) => api.get(`/review/customer/${id}`),
   deactivateCustomer: (id) => api.delete(`/review/customer/${id}`),
 };
