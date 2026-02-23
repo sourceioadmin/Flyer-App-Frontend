@@ -313,7 +313,6 @@ const ReviewBoxTab = ({ companyId }) => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -327,7 +326,6 @@ const ReviewBoxTab = ({ companyId }) => {
       const data = Array.isArray(response.data) ? response.data : [];
       const normalized = data.map(item => ({
         id: item.Id,
-        customerName: item.CustomerName,
         phoneNumber: item.PhoneNumber,
         companyId: item.CompanyId,
         createdAt: item.CreatedAt,
@@ -370,31 +368,28 @@ const ReviewBoxTab = ({ companyId }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    const trimmedName = customerName.trim();
     const trimmedPhone = phoneNumber.trim();
 
-    if (!trimmedName || !trimmedPhone) {
-      setErrorMsg('Please fill in both Customer Name and Phone Number.');
+    if (!trimmedPhone) {
+      setErrorMsg('Please enter a phone number (10 digits or with country code).');
       return;
     }
 
-    // Validate phone: digits only, at least 10 digits
+    // Validate: 10 digits only (backend adds country code) or 11–15 digits (with country code)
     if (!/^\d{10,15}$/.test(trimmedPhone)) {
-      setErrorMsg('Phone number must be 10-15 digits with country code (e.g., 919076006262).');
+      setErrorMsg('Phone number must be 10 digits (e.g., 9076006262) or 11–15 digits with country code (e.g., 919076006262).');
       return;
     }
 
     setSubmitting(true);
     try {
       const response = await reviewAPI.addCustomer({
-        CustomerName: trimmedName,
         PhoneNumber: trimmedPhone,
         CompanyId: companyId,
       });
       const item = response.data;
       const newCustomer = {
         id: item.Id,
-        customerName: item.CustomerName,
         phoneNumber: item.PhoneNumber,
         companyId: item.CompanyId,
         createdAt: item.CreatedAt,
@@ -404,9 +399,8 @@ const ReviewBoxTab = ({ companyId }) => {
         isActive: item.IsActive,
       };
       setCustomers(prev => [newCustomer, ...prev]);
-      setCustomerName('');
       setPhoneNumber('');
-      setSuccessMsg(`Review request sent to ${trimmedName}!`);
+      setSuccessMsg(`Review request sent to ${trimmedPhone}!`);
       setCurrentPage(1);
     } catch (err) {
       console.error('Failed to add review customer:', err);
@@ -425,14 +419,14 @@ const ReviewBoxTab = ({ companyId }) => {
     }
   };
 
-  const handleDeactivate = async (customerId, customerName) => {
-    if (!window.confirm(`Stop future review messages for ${customerName}?`)) return;
+  const handleDeactivate = async (customerId, phoneNumber) => {
+    if (!window.confirm(`Stop future review messages for ${phoneNumber}?`)) return;
     try {
       await reviewAPI.deactivateCustomer(customerId);
       setCustomers(prev =>
         prev.map(c => c.id === customerId ? { ...c, isActive: false } : c)
       );
-      setSuccessMsg(`Messages stopped for ${customerName}.`);
+      setSuccessMsg(`Messages stopped for ${phoneNumber}.`);
     } catch (err) {
       console.error('Failed to deactivate customer:', err);
       setErrorMsg('Failed to stop messages. Please try again.');
@@ -457,23 +451,12 @@ const ReviewBoxTab = ({ companyId }) => {
         <form onSubmit={handleAddCustomer} className="review-form">
           <div className="review-form-fields">
             <div className="review-form-group">
-              <label htmlFor="customerName">Customer Name</label>
-              <input
-                id="customerName"
-                type="text"
-                placeholder="e.g., John Doe"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                disabled={submitting}
-                required
-              />
-            </div>
-            <div className="review-form-group">
-              <label htmlFor="phoneNumber">Phone Number (with country code)</label>
+              <label htmlFor="phoneNumber">Phone Number (10 digits or with country code)</label>
               <input
                 id="phoneNumber"
                 type="tel"
-                placeholder="e.g., 919076006262"
+                placeholder="e.g., 9076006262 or 919076006262"
+                maxLength={15}
                 value={phoneNumber}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '');
@@ -541,7 +524,6 @@ const ReviewBoxTab = ({ companyId }) => {
               <table className="review-table">
                 <thead>
                   <tr>
-                    <th>Customer Name</th>
                     <th>Phone Number</th>
                     <th>Added Date</th>
                     <th>Message Status</th>
@@ -551,7 +533,6 @@ const ReviewBoxTab = ({ companyId }) => {
                 <tbody>
                   {paginatedCustomers.map((customer) => (
                     <tr key={customer.id} className={!customer.isActive ? 'row-inactive' : ''}>
-                      <td className="td-name">{customer.customerName}</td>
                       <td className="td-phone">{customer.phoneNumber}</td>
                       <td className="td-date">
                         {new Date(customer.createdAt).toLocaleDateString()}
@@ -567,7 +548,7 @@ const ReviewBoxTab = ({ companyId }) => {
                         {customer.isActive ? (
                           <button
                             className="btn-stop-messages"
-                            onClick={() => handleDeactivate(customer.id, customer.customerName)}
+                            onClick={() => handleDeactivate(customer.id, customer.phoneNumber)}
                           >
                             Stop Messages
                           </button>
@@ -586,12 +567,11 @@ const ReviewBoxTab = ({ companyId }) => {
               {paginatedCustomers.map((customer) => (
                 <div key={customer.id} className={`review-card-mobile ${!customer.isActive ? 'card-inactive' : ''}`}>
                   <div className="review-card-header-mobile">
-                    <strong>{customer.customerName}</strong>
+                    <strong>{customer.phoneNumber}</strong>
                     <span className="review-card-date">
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <div className="review-card-phone">{customer.phoneNumber}</div>
                   <div className="msg-status-group">
                     <MessageStatusBadge sent={customer.day0Sent} label="Day 0" />
                     <MessageStatusBadge sent={customer.day1Sent} label="Day 1" />
@@ -601,7 +581,7 @@ const ReviewBoxTab = ({ companyId }) => {
                     {customer.isActive ? (
                       <button
                         className="btn-stop-messages"
-                        onClick={() => handleDeactivate(customer.id, customer.customerName)}
+                        onClick={() => handleDeactivate(customer.id, customer.phoneNumber)}
                       >
                         Stop Messages
                       </button>
