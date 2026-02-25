@@ -587,6 +587,10 @@
   gap: 16px;
 }
 
+.review-form-fields .review-form-group {
+  grid-column: 1 / -1;
+}
+
 .review-form-group {
   display: flex;
   flex-direction: column;
@@ -600,12 +604,15 @@
 }
 
 .review-form-group input {
-  padding: 11px 14px;
+  width: 100%;
+  min-height: 96px;
+  padding: 14px 18px;
   border: 1.5px solid #d1d5db;
   border-radius: 8px;
   font-size: 15px;
   transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
+  box-sizing: border-box;
 }
 
 .review-form-group input:focus {

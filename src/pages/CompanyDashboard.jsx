@@ -368,27 +368,25 @@ const ReviewBoxTab = ({ companyId }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    const trimmedPhone = phoneNumber.trim();
+    const trimmedInput = phoneNumber.trim();
 
-    if (!trimmedPhone) {
-      setErrorMsg('Please enter a phone number (10 digits or with country code).');
-      return;
-    }
-
-    // Validate: 10 digits only (backend adds country code) or 11–15 digits (with country code)
-    if (!/^\d{10,15}$/.test(trimmedPhone)) {
-      setErrorMsg('Phone number must be 10 digits (e.g., 9076006262) or 11–15 digits with country code (e.g., 919076006262).');
+    if (!trimmedInput) {
+      setErrorMsg('Please enter at least one phone number (comma-separated).');
       return;
     }
 
     setSubmitting(true);
     try {
       const response = await reviewAPI.addCustomer({
-        PhoneNumber: trimmedPhone,
+        PhoneNumber: trimmedInput,
         CompanyId: companyId,
       });
-      const item = response.data;
-      const newCustomer = {
+      const data = response.data;
+      const added = data.Added || [];
+      const invalid = data.Invalid || [];
+      const duplicates = data.Duplicates || [];
+
+      const newCustomers = added.map((item) => ({
         id: item.Id,
         phoneNumber: item.PhoneNumber,
         companyId: item.CompanyId,
@@ -397,11 +395,28 @@ const ReviewBoxTab = ({ companyId }) => {
         day1Sent: item.Day1Sent,
         day3Sent: item.Day3Sent,
         isActive: item.IsActive,
-      };
-      setCustomers(prev => [newCustomer, ...prev]);
+      }));
+      if (newCustomers.length > 0) {
+        setCustomers((prev) => [...newCustomers, ...prev]);
+        setCurrentPage(1);
+      }
+
       setPhoneNumber('');
-      setSuccessMsg(`Review request sent to ${trimmedPhone}!`);
-      setCurrentPage(1);
+
+      const parts = [];
+      if (added.length > 0) {
+        parts.push(`Review requests sent to ${added.length} number${added.length === 1 ? '' : 's'}.`);
+      }
+      if (invalid.length > 0) {
+        parts.push(`${invalid.length} invalid (skipped): ${invalid.join(', ')}`);
+      }
+      if (duplicates.length > 0) {
+        parts.push(`${duplicates.length} duplicate (skipped): ${duplicates.join(', ')}`);
+      }
+      if (added.length === 0 && (invalid.length > 0 || duplicates.length > 0)) {
+        parts.unshift('No new requests sent.');
+      }
+      setSuccessMsg(parts.length > 0 ? parts.join(' ') : 'Done.');
     } catch (err) {
       console.error('Failed to add review customer:', err);
       const msg = err.response?.data?.message || err.response?.data?.Message;
@@ -451,17 +466,14 @@ const ReviewBoxTab = ({ companyId }) => {
         <form onSubmit={handleAddCustomer} className="review-form">
           <div className="review-form-fields">
             <div className="review-form-group">
-              <label htmlFor="phoneNumber">Phone Number (10 digits or with country code)</label>
+              <label htmlFor="phoneNumber">Phone numbers (comma-separated)</label>
               <input
                 id="phoneNumber"
-                type="tel"
-                placeholder="e.g., 9076006262 or 919076006262"
-                maxLength={15}
+                type="text"
+                placeholder="e.g. 9876543210, 9876543211, 9876543212"
+                maxLength={1000}
                 value={phoneNumber}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  setPhoneNumber(val);
-                }}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={submitting}
                 required
               />
