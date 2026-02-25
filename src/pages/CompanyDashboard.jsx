@@ -1178,7 +1178,18 @@ const CompanyDashboard = () => {
                   />
                   <div className="flyer-info">
                     <p className="flyer-date">
-                      {new Date(flyer.createdAt).toLocaleDateString()}
+                      For: {(() => {
+                        try {
+                          const date = new Date(flyer.forDate);
+                          return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          });
+                        } catch {
+                          return 'Invalid Date';
+                        }
+                      })()}
                     </p>
                     <div className="flyer-actions">
                       <button
