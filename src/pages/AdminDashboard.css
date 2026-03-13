@@ -819,3 +819,305 @@
     padding: 15px;
   }
 }
+
+/* ==========================================
+   Admin Tab Navigation
+   ========================================== */
+.admin-tab-nav {
+  display: flex;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 0 40px;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.admin-tab-btn {
+  padding: 14px 28px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  top: 2px;
+}
+
+.admin-tab-btn:hover {
+  color: #667eea;
+  background: #f8f9ff;
+}
+
+.admin-tab-btn.admin-tab-active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+@media (max-width: 768px) {
+  .admin-tab-nav {
+    padding: 0 16px;
+  }
+
+  .admin-tab-btn {
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+}
+
+/* ==========================================
+   Companies Tab
+   ========================================== */
+.companies-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.companies-list-card {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.companies-list-card h2 {
+  margin-top: 0;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Companies Table (Desktop) */
+.companies-table-wrapper {
+  overflow-x: auto;
+}
+
+.companies-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.companies-table thead th {
+  text-align: left;
+  padding: 12px 14px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.companies-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s;
+}
+
+.companies-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.companies-table td {
+  padding: 14px;
+  vertical-align: middle;
+}
+
+.td-company-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.td-company-email {
+  color: #666;
+  font-size: 13px;
+}
+
+.td-company-actions {
+  white-space: nowrap;
+  display: flex;
+  gap: 8px;
+}
+
+/* Feature Badge (small) */
+.feature-badge-sm {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badge-on {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-off {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+/* Feedback Button */
+.btn-feedback {
+  background: #ede9fe;
+  color: #7c3aed;
+  border: 1px solid #c4b5fd;
+  padding: 7px 14px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-feedback:hover {
+  background: #7c3aed;
+  color: white;
+  border-color: #7c3aed;
+}
+
+/* Mobile Company Cards (hidden on desktop) */
+.companies-cards-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .companies-table-wrapper {
+    display: none;
+  }
+
+  .companies-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .company-card-mobile {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .company-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .company-card-header strong {
+    font-size: 16px;
+    color: #333;
+  }
+
+  .company-card-email {
+    font-size: 13px;
+    color: #888;
+  }
+
+  .company-card-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .company-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .company-card-actions .edit-btn,
+  .company-card-actions .btn-feedback {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* Admin Toggle List in Edit Modal */
+.admin-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 8px;
+}
+
+.admin-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.admin-toggle-row:last-child {
+  border-bottom: none;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggle-switch.toggle-on {
+  background: #667eea;
+}
+
+.toggle-switch.toggle-off {
+  background: #d1d5db;
+}
+
+.toggle-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: left 0.3s ease;
+}
+
+.toggle-on .toggle-knob {
+  left: 25px;
+}
+
+.toggle-off .toggle-knob {
+  left: 3px;
+}
+
+.toggle-row-disabled {
+  opacity: 0.5;
+}
+
+/* Company Edit Modal */
+.company-edit-modal {
+  max-width: 540px;
+}

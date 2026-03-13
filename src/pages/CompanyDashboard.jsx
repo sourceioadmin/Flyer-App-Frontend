@@ -316,6 +316,7 @@ const ReviewBoxTab = ({ companyId }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [featureDisabled, setFeatureDisabled] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -337,7 +338,11 @@ const ReviewBoxTab = ({ companyId }) => {
       setCustomers(normalized);
     } catch (err) {
       console.error('Failed to load review customers:', err);
-      setErrorMsg('Failed to load review customers.');
+      if (err.response?.status === 403) {
+        setFeatureDisabled(true);
+      } else {
+        setErrorMsg('Failed to load review customers.');
+      }
     } finally {
       setLoading(false);
     }
@@ -419,6 +424,10 @@ const ReviewBoxTab = ({ companyId }) => {
       setSuccessMsg(parts.length > 0 ? parts.join(' ') : 'Done.');
     } catch (err) {
       console.error('Failed to add review customer:', err);
+      if (err.response?.status === 403) {
+        setFeatureDisabled(true);
+        return;
+      }
       const msg = err.response?.data?.message || err.response?.data?.Message;
       if (msg && msg.toLowerCase().includes('gbp review link')) {
         setErrorMsg('Please configure your Google Review Link in the Settings tab before adding customers.');
@@ -454,6 +463,17 @@ const ReviewBoxTab = ({ companyId }) => {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
+
+  if (featureDisabled) {
+    return (
+      <div className="review-box-container">
+        <div className="feature-disabled-banner">
+          <span className="feature-disabled-icon">&#9432;</span>
+          This feature is not enabled for your company. Contact your administrator.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="review-box-container">
@@ -636,13 +656,20 @@ const ReviewBoxTab = ({ companyId }) => {
 
 // Settings Tab Component
 const SettingsTab = ({ companyId }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+
   const [gbpLink, setGbpLink] = useState('');
   const [originalGbpLink, setOriginalGbpLink] = useState('');
   const [companyData, setCompanyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingToggles, setSavingToggles] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const [flyerBoxFlag, setFlyerBoxFlag] = useState(false);
+  const [reviewBoxFlag, setReviewBoxFlag] = useState(false);
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -654,6 +681,8 @@ const SettingsTab = ({ companyId }) => {
         const link = data.GbpReviewLink || data.gbpReviewLink || '';
         setGbpLink(link);
         setOriginalGbpLink(link);
+        setFlyerBoxFlag(data.FlyerBoxEnabled ?? data.flyerBoxEnabled ?? false);
+        setReviewBoxFlag(data.ReviewBoxEnabled ?? data.reviewBoxEnabled ?? false);
       } catch (err) {
         console.error('Failed to load company settings:', err);
         setErrorMsg('Failed to load company settings.');
@@ -698,7 +727,7 @@ const SettingsTab = ({ companyId }) => {
       await companyAPI.update(companyId, {
         Name: companyName,
         ContactEmail: contactEmail,
-        GbpReviewLink: trimmed,
+        GbpReviewLink: trimmed || null,
       });
       setOriginalGbpLink(trimmed);
       setSuccessMsg('Google Review Link saved successfully!');
@@ -711,16 +740,69 @@ const SettingsTab = ({ companyId }) => {
     }
   };
 
+  const handleToggleSave = async (newFlyerBox, newReviewBox) => {
+    setSavingToggles(true);
+    setErrorMsg('');
+    try {
+      const companyName = companyData?.Name || companyData?.name || '';
+      const contactEmail = companyData?.ContactEmail || companyData?.contactEmail || '';
+      const gbp = companyData?.GbpReviewLink || companyData?.gbpReviewLink || null;
+      await companyAPI.update(companyId, {
+        Name: companyName,
+        ContactEmail: contactEmail,
+        GbpReviewLink: gbp,
+        FlyerBoxEnabled: newFlyerBox,
+        ReviewBoxEnabled: newReviewBox,
+      });
+      setSuccessMsg('Feature toggles updated successfully!');
+    } catch (err) {
+      console.error('Failed to update feature toggles:', err);
+      const msg = err.response?.data?.message || err.response?.data?.Message;
+      setErrorMsg(msg || 'Failed to update feature toggles.');
+      setFlyerBoxFlag(companyData?.FlyerBoxEnabled ?? companyData?.flyerBoxEnabled ?? false);
+      setReviewBoxFlag(companyData?.ReviewBoxEnabled ?? companyData?.reviewBoxEnabled ?? false);
+    } finally {
+      setSavingToggles(false);
+    }
+  };
+
+  const onToggleFlyerBox = () => {
+    const newVal = !flyerBoxFlag;
+    setFlyerBoxFlag(newVal);
+    handleToggleSave(newVal, reviewBoxFlag);
+  };
+
+  const onToggleReviewBox = () => {
+    const newVal = !reviewBoxFlag;
+    setReviewBoxFlag(newVal);
+    handleToggleSave(flyerBoxFlag, newVal);
+  };
+
   const hasChanges = gbpLink.trim() !== originalGbpLink;
 
   if (loading) {
     return <p className="loading">Loading settings...</p>;
   }
 
+  const companyName = companyData?.Name || companyData?.name || '';
+  const contactEmail = companyData?.ContactEmail || companyData?.contactEmail || '';
+
   return (
     <div className="settings-container">
       <div className="settings-card">
         <h3 className="settings-title">Company Settings</h3>
+
+        <div className="settings-info-row">
+          <div className="settings-info-item">
+            <span className="settings-info-label">Company Name</span>
+            <span className="settings-info-value">{companyName || '--'}</span>
+          </div>
+          <div className="settings-info-item">
+            <span className="settings-info-label">Contact Email</span>
+            <span className="settings-info-value">{contactEmail || '--'}</span>
+          </div>
+        </div>
+
         <form onSubmit={handleSave} className="settings-form">
           <div className="settings-form-group">
             <label htmlFor="gbpReviewLink">Google Review Link</label>
@@ -743,21 +825,74 @@ const SettingsTab = ({ companyId }) => {
         {successMsg && <div className="review-success-msg">{successMsg}</div>}
         {errorMsg && <div className="review-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Feature Toggles - only visible to admins */}
+      {isAdmin && (
+        <div className="settings-card settings-toggles-card">
+          <h3 className="settings-title">Feature Toggles</h3>
+
+          <div className="toggle-list">
+            <div className="toggle-row">
+              <div className="toggle-info">
+                <span className="toggle-label">FlyerBox</span>
+                <span className="toggle-description">Enable flyer distribution for this company</span>
+              </div>
+              <button
+                type="button"
+                className={`toggle-switch ${flyerBoxFlag ? 'toggle-on' : 'toggle-off'}`}
+                onClick={onToggleFlyerBox}
+                disabled={savingToggles}
+                aria-label="Toggle FlyerBox"
+              >
+                <span className="toggle-knob" />
+              </button>
+            </div>
+
+            <div className="toggle-row">
+              <div className="toggle-info">
+                <span className="toggle-label">ReviewBox</span>
+                <span className="toggle-description">Enable review request automation</span>
+              </div>
+              <button
+                type="button"
+                className={`toggle-switch ${reviewBoxFlag ? 'toggle-on' : 'toggle-off'}`}
+                onClick={onToggleReviewBox}
+                disabled={savingToggles}
+                aria-label="Toggle ReviewBox"
+              >
+                <span className="toggle-knob" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 const CompanyDashboard = () => {
-  const [activeTab, setActiveTab] = useState('flyers');
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const flyerBoxEnabled = user?.flyerBoxEnabled !== false;
+  const reviewBoxEnabled = user?.reviewBoxEnabled !== false;
+
+  const getDefaultTab = () => {
+    if (flyerBoxEnabled) return 'flyers';
+    if (reviewBoxEnabled) return 'reviewbox';
+    return 'settings';
+  };
+
+  const [activeTab, setActiveTab] = useState(getDefaultTab);
   const [flyers, setFlyers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [featureDisabledMsg, setFeatureDisabledMsg] = useState('');
   const [sharingId, setSharingId] = useState(null);
   const [enlargedImage, setEnlargedImage] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedFlyer, setSelectedFlyer] = useState(null);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   // Month navigation state - default to current month
   const now = new Date();
@@ -784,9 +919,15 @@ const CompanyDashboard = () => {
       }));
 
       setFlyers(normalized);
+      setFeatureDisabledMsg('');
     } catch (err) {
       console.error('Failed to load flyers:', err);
-      setError('Failed to load flyers');
+      if (err.response?.status === 403) {
+        setFeatureDisabledMsg('This feature is not enabled for your company. Contact your administrator.');
+        setFlyers([]);
+      } else {
+        setError('Failed to load flyers');
+      }
     } finally {
       setLoading(false);
     }
@@ -1123,18 +1264,22 @@ const CompanyDashboard = () => {
 
       {/* Tab Navigation */}
       <div className="tab-nav">
-        <button
-          className={`tab-btn ${activeTab === 'flyers' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('flyers')}
-        >
-          Flyers
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'reviewbox' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('reviewbox')}
-        >
-          Review Box
-        </button>
+        {flyerBoxEnabled && (
+          <button
+            className={`tab-btn ${activeTab === 'flyers' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('flyers')}
+          >
+            Flyers
+          </button>
+        )}
+        {reviewBoxEnabled && (
+          <button
+            className={`tab-btn ${activeTab === 'reviewbox' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('reviewbox')}
+          >
+            Review Box
+          </button>
+        )}
         <button
           className={`tab-btn ${activeTab === 'settings' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('settings')}
@@ -1144,7 +1289,7 @@ const CompanyDashboard = () => {
       </div>
 
       {/* Flyers Tab */}
-      {activeTab === 'flyers' && (
+      {activeTab === 'flyers' && flyerBoxEnabled && (
         <>
           <MonthNavigator
             currentYear={currentYear}
@@ -1152,10 +1297,16 @@ const CompanyDashboard = () => {
             onMonthChange={handleMonthChange}
           />
           <div className="company-content">
-            {loading && <p className="loading">Loading flyers...</p>}
+            {featureDisabledMsg && (
+              <div className="feature-disabled-banner">
+                <span className="feature-disabled-icon">&#9432;</span>
+                {featureDisabledMsg}
+              </div>
+            )}
+            {loading && !featureDisabledMsg && <p className="loading">Loading flyers...</p>}
             {error && <p className="error-message">{error}</p>}
 
-            {!loading && flyers.length === 0 && (
+            {!loading && !featureDisabledMsg && flyers.length === 0 && (
               <div className="no-flyers">
                 <p>No flyers available yet.</p>
               </div>
@@ -1216,7 +1367,7 @@ const CompanyDashboard = () => {
       )}
 
       {/* Review Box Tab */}
-      {activeTab === 'reviewbox' && (
+      {activeTab === 'reviewbox' && reviewBoxEnabled && (
         <div className="company-content">
           <ReviewBoxTab companyId={user?.companyId} />
         </div>
