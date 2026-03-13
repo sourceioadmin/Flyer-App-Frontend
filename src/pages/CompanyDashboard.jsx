@@ -1280,12 +1280,6 @@ const CompanyDashboard = () => {
             Review Box
           </button>
         )}
-        <button
-          className={`tab-btn ${activeTab === 'settings' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          Settings
-        </button>
       </div>
 
       {/* Flyers Tab */}
