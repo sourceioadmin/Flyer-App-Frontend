@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import CompanyDashboard from './pages/CompanyDashboard';
+import InstallPrompt from './components/InstallPrompt';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/company" element={<CompanyDashboard />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
+        <InstallPrompt />
       </Router>
     </AuthProvider>
   );

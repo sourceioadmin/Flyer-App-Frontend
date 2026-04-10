@@ -13,7 +13,13 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.{css,js,jpg,png,gif,ico,svg,woff,woff2,ttf,eot}"]
+    "exclude": [
+      "/assets/*",
+      "/*.{css,js,jpg,png,gif,ico,svg,woff,woff2,ttf,eot}",
+      "/manifest.webmanifest",
+      "/sw.js",
+      "/registerSW.js"
+    ]
   },
   "platform": {
     "apiRuntime": "node:18"
@@ -24,6 +30,7 @@
   "mimeTypes": {
     ".json": "application/json",
     ".js": "text/javascript",
-    ".css": "text/css"
+    ".css": "text/css",
+    ".webmanifest": "application/manifest+json"
   }
 }

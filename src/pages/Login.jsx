@@ -99,14 +99,7 @@ const Login = () => {
         </form>
 
         <div className="register-link">
-          <p>Don't have an account? <a href="#" onClick={() => navigate('/register')}>Register here</a></p>
-        </div>
-
-        <div className="demo-credentials">
-          <p><strong>Demo Credentials:</strong></p>
-          <p>Admin: admin@flyer.com / admin123</p>
-          <p>Company: gsraoassociates@gmail.com / gsrao@2026</p>
-          <p><em>Companies register themselves via the Register page</em></p>
+          <p>To register your company, contact us at <a href="mailto:contact@sourceiotech.com">contact@sourceiotech.com</a> or call <a href="tel:9823717887">9823717887</a></p>
         </div>
       </div>
     </div>

@@ -330,9 +330,9 @@ const ReviewBoxTab = ({ companyId }) => {
         phoneNumber: item.PhoneNumber,
         companyId: item.CompanyId,
         createdAt: item.CreatedAt,
-        day0Sent: item.Day0Sent,
         day1Sent: item.Day1Sent,
         day3Sent: item.Day3Sent,
+        day5Sent: item.Day5Sent,
         isActive: item.IsActive,
       }));
       setCustomers(normalized);
@@ -396,9 +396,9 @@ const ReviewBoxTab = ({ companyId }) => {
         phoneNumber: item.PhoneNumber,
         companyId: item.CompanyId,
         createdAt: item.CreatedAt,
-        day0Sent: item.Day0Sent,
         day1Sent: item.Day1Sent,
         day3Sent: item.Day3Sent,
+        day5Sent: item.Day5Sent,
         isActive: item.IsActive,
       }));
       if (newCustomers.length > 0) {
@@ -430,7 +430,7 @@ const ReviewBoxTab = ({ companyId }) => {
       }
       const msg = err.response?.data?.message || err.response?.data?.Message;
       if (msg && msg.toLowerCase().includes('gbp review link')) {
-        setErrorMsg('Please configure your Google Review Link in the Settings tab before adding customers.');
+        setErrorMsg('Google Review Link is not configured. Please contact your administrator.');
       } else if (err.response?.status === 400) {
         setErrorMsg(msg || 'Invalid request. Please check your inputs.');
       } else if (err.response?.status === 404) {
@@ -481,7 +481,7 @@ const ReviewBoxTab = ({ companyId }) => {
       <div className="review-form-card">
         <h3 className="review-form-title">Send Review Request</h3>
         <p className="review-form-subtitle">
-          Add customer details to automatically send WhatsApp review requests on Day 0, Day 1, and Day 3.
+          Add customer details to automatically send WhatsApp review requests on Day 1, Day 3, and Day 5.
         </p>
         <form onSubmit={handleAddCustomer} className="review-form">
           <div className="review-form-fields">
@@ -512,18 +512,10 @@ const ReviewBoxTab = ({ companyId }) => {
         <h4>How it works</h4>
         <div className="review-timeline">
           <div className="timeline-step">
-            <span className="timeline-dot day0"></span>
-            <div>
-              <strong>Day 0</strong>
-              <p>Sent immediately after adding</p>
-            </div>
-          </div>
-          <div className="timeline-connector"></div>
-          <div className="timeline-step">
             <span className="timeline-dot day1"></span>
             <div>
               <strong>Day 1</strong>
-              <p>Follow-up after ~24 hours</p>
+              <p>Sent after ~24 hours</p>
             </div>
           </div>
           <div className="timeline-connector"></div>
@@ -531,7 +523,15 @@ const ReviewBoxTab = ({ companyId }) => {
             <span className="timeline-dot day3"></span>
             <div>
               <strong>Day 3</strong>
-              <p>Final reminder after ~72 hours</p>
+              <p>Follow-up after ~72 hours</p>
+            </div>
+          </div>
+          <div className="timeline-connector"></div>
+          <div className="timeline-step">
+            <span className="timeline-dot day5"></span>
+            <div>
+              <strong>Day 5</strong>
+              <p>Final reminder after ~120 hours</p>
             </div>
           </div>
         </div>
@@ -571,9 +571,9 @@ const ReviewBoxTab = ({ companyId }) => {
                       </td>
                       <td className="td-status">
                         <div className="msg-status-group">
-                          <MessageStatusBadge sent={customer.day0Sent} label="Day 0" />
                           <MessageStatusBadge sent={customer.day1Sent} label="Day 1" />
                           <MessageStatusBadge sent={customer.day3Sent} label="Day 3" />
+                          <MessageStatusBadge sent={customer.day5Sent} label="Day 5" />
                         </div>
                       </td>
                       <td className="td-actions">
@@ -605,9 +605,9 @@ const ReviewBoxTab = ({ companyId }) => {
                     </span>
                   </div>
                   <div className="msg-status-group">
-                    <MessageStatusBadge sent={customer.day0Sent} label="Day 0" />
                     <MessageStatusBadge sent={customer.day1Sent} label="Day 1" />
                     <MessageStatusBadge sent={customer.day3Sent} label="Day 3" />
+                    <MessageStatusBadge sent={customer.day5Sent} label="Day 5" />
                   </div>
                   <div className="review-card-actions-mobile">
                     {customer.isActive ? (

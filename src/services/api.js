@@ -1,26 +1,9 @@
 import axios from "axios";
 
 // Backend configuration
-// Use environment variable for production, fallback to auto-detect for development
-let API_BASE_URL;
-
-if (import.meta.env.VITE_API_BASE_URL) {
-  // Use environment variable if set
-  API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-} else {
-  // Auto-detect based on hostname
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
-
-  if (isLocalhost) {
-    // On localhost, use proxy
-    API_BASE_URL = "/api";
-  } else {
-    // On network IP (e.g., 10.10.10.68), connect directly to backend
-    const protocol = window.location.protocol; // Use same protocol (https)
-    API_BASE_URL = `${protocol}//${hostname}:5001/api`;
-  }
-}
+// In dev mode, always use the Vite proxy (/api) — it works on localhost AND network IPs
+// because Vite binds to 0.0.0.0. In production, use VITE_API_BASE_URL env variable.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 // Debug logging
 console.log("API Configuration:", {
@@ -76,6 +59,19 @@ export const reviewAPI = {
   getCustomersByCompany: (companyId) =>
     api.get(`/review/customers/${companyId}`),
   deactivateCustomer: (id) => api.delete(`/review/customer/${id}`),
+};
+
+export const notificationAPI = {
+  getByCompany: (companyId) => api.get(`/notification/${companyId}`),
+  markRead: (id) => api.put(`/notification/${id}/read`),
+  markAllRead: (companyId) => api.put(`/notification/read-all/${companyId}`),
+};
+
+export const pushAPI = {
+  getVapidPublicKey: () => api.get("/push/vapid-public-key"),
+  subscribe: (data) => api.post("/push/subscribe", data),
+  unsubscribe: (data) => api.delete("/push/unsubscribe", { data }),
+  send: (data) => api.post("/push/send", data),
 };
 
 export default api;

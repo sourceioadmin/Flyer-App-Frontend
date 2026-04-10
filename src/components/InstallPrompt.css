@@ -1,0 +1,353 @@
+/* ── Install Banner ───────────────────────────────────── */
+.install-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.install-banner-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.install-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.install-banner-text strong {
+  font-size: 14px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.install-banner-text span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.install-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.install-btn-primary {
+  padding: 7px 16px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.install-btn-primary:hover {
+  background: #4338ca;
+}
+
+.install-btn-dismiss {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.install-btn-dismiss:hover {
+  color: #374151;
+}
+
+/* ── Notification Bell ────────────────────────────────── */
+.notif-bell-wrapper {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9998;
+}
+
+.notif-bell-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  position: relative;
+}
+
+.notif-bell-btn svg {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+}
+
+.notif-bell-btn.notif-active svg {
+  color: #4f46e5;
+}
+
+.notif-bell-btn:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 2px 12px rgba(79, 70, 229, 0.15);
+}
+
+/* ── Badge ────────────────────────────────────────────── */
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border: 2px solid #fff;
+}
+
+/* ── Notification Panel ───────────────────────────────── */
+.notif-panel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 320px;
+  max-height: 480px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.15s ease;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Panel Header ─────────────────────────────────────── */
+.notif-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.notif-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.notif-mark-all {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notif-mark-all:hover {
+  text-decoration: underline;
+}
+
+/* ── Notification List ────────────────────────────────── */
+.notif-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 320px;
+}
+
+.notif-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 0;
+}
+
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.notif-item:hover {
+  background: #f9fafb;
+}
+
+.notif-item.notif-unread {
+  background: #eff6ff;
+}
+
+.notif-item.notif-unread:hover {
+  background: #dbeafe;
+}
+
+.notif-item-dot {
+  width: 8px;
+  padding-top: 5px;
+  flex-shrink: 0;
+}
+
+.notif-item-dot span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4f46e5;
+}
+
+.notif-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 2px;
+}
+
+.notif-item-body {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+.notif-item-time {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ── Panel Footer (push settings) ─────────────────────── */
+.notif-panel-footer {
+  padding: 10px 16px 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.notif-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.notif-toggle-btn {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.notif-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.notif-toggle-btn.notif-on {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.notif-toggle-btn.notif-on:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.notif-toggle-btn.notif-test {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.notif-toggle-btn.notif-test:hover:not(:disabled) {
+  background: #c7d2fe;
+}
+
+.notif-toggle-btn.notif-off {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.notif-toggle-btn.notif-off:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+@media (max-width: 480px) {
+  .install-banner {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    border-radius: 14px 14px 0 0;
+    max-width: 100%;
+  }
+
+  .notif-panel {
+    width: calc(100vw - 32px);
+    right: -8px;
+  }
+}
