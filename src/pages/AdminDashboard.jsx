@@ -16,6 +16,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
   const [editGbpLink, setEditGbpLink] = useState('');
   const [editFlyerBox, setEditFlyerBox] = useState(false);
   const [editReviewBox, setEditReviewBox] = useState(false);
+  const [editReviewCredit, setEditReviewCredit] = useState(0);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -42,6 +43,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
     setEditGbpLink(company.gbpReviewLink || '');
     setEditFlyerBox(company.flyerBoxEnabled || false);
     setEditReviewBox(company.reviewBoxEnabled || false);
+    setEditReviewCredit(company.reviewMessageCredit || 0);
     setError('');
     setMessage('');
   };
@@ -60,6 +62,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
         GbpReviewLink: editGbpLink.trim(),
         FlyerBoxEnabled: editFlyerBox,
         ReviewBoxEnabled: editReviewBox,
+        ReviewMessageCredit: parseInt(editReviewCredit, 10) || 0,
       });
       setMessage('Company updated successfully!');
       setEditingCompany(null);
@@ -135,6 +138,18 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                 </div>
               </div>
 
+              <div className="form-group">
+                <label>Review Message Credit</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editReviewCredit}
+                  onChange={(e) => setEditReviewCredit(e.target.value)}
+                  placeholder="0 = unlimited"
+                />
+                <small className="help-text">0 = unlimited. Used: {editingCompany.reviewMessagesSent || 0}</small>
+              </div>
+
               <div className="modal-actions">
                 <button type="submit" className="btn-save" disabled={saving}>
                   {saving ? 'Saving...' : 'Update'}
@@ -158,6 +173,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                 <th>Email</th>
                 <th>FlyerBox</th>
                 <th>ReviewBox</th>
+                <th>Credits</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -174,6 +190,11 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                   <td>
                     <span className={`feature-badge-sm ${company.reviewBoxEnabled ? 'badge-on' : 'badge-off'}`}>
                       {company.reviewBoxEnabled ? 'ON' : 'OFF'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="credit-usage">
+                      {company.reviewMessagesSent}/{company.reviewMessageCredit || '∞'}
                     </span>
                   </td>
                   <td className="td-company-actions">
@@ -199,6 +220,9 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                 </span>
                 <span className={`feature-badge-sm ${company.reviewBoxEnabled ? 'badge-on' : 'badge-off'}`}>
                   Review: {company.reviewBoxEnabled ? 'ON' : 'OFF'}
+                </span>
+                <span className="feature-badge-sm badge-neutral">
+                  Credits: {company.reviewMessagesSent}/{company.reviewMessageCredit || '∞'}
                 </span>
               </div>
               <div className="company-card-actions">
@@ -282,6 +306,8 @@ const AdminDashboard = () => {
         gbpReviewLink: item.GbpReviewLink || item.gbpReviewLink || '',
         flyerBoxEnabled: item.FlyerBoxEnabled ?? item.flyerBoxEnabled ?? false,
         reviewBoxEnabled: item.ReviewBoxEnabled ?? item.reviewBoxEnabled ?? false,
+        reviewMessagesSent: item.ReviewMessagesSent ?? item.reviewMessagesSent ?? 0,
+        reviewMessageCredit: item.ReviewMessageCredit ?? item.reviewMessageCredit ?? 0,
       }));
 
       setCompanies(normalized);
