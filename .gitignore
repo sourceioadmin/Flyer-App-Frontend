@@ -23,6 +23,7 @@ build
 # Vite
 .vite
 vite.config.js.timestamp-*
+dev-dist
 
 # Environment variables
 .env
