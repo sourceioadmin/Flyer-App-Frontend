@@ -43,7 +43,7 @@ const Login = () => {
         <span className="login-logo-wrap">
           <img src="/flyer-logo.png" alt="Flyer App" className="login-logo" />
         </span>
-        <h1>Flyer App</h1>
+        <h1>SourceIO App</h1>
         <h2>Login</h2>
 
         <form onSubmit={handleSubmit}>

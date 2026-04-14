@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(printf '=== FILE 1: a7f54d45a31482792.output ===\\\\n')",
+      "Bash(npm install:*)",
+      "Bash(dotnet add:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash($NODEEXE:*)",
+      "Bash('/mnt/c/Program Files/dotnet/dotnet.exe' add package WebPush)",
+      "Bash('/mnt/c/Program Files/dotnet/dotnet.exe' build --no-restore)",
+      "Bash(npm run:*)",
+      "Bash('/mnt/c/Program Files/dotnet/dotnet.exe' ef migrations add AddPushSubscriptions)",
+      "Bash('/mnt/c/Program Files/dotnet/dotnet.exe' ef migrations add AddPushSubscriptions --output-dir Migrations)"
+    ]
+  }
+}
