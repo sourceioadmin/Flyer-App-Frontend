@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
-import { pushAPI, notificationAPI } from '../services/api';
+import { notificationAPI } from '../services/api';
 import './InstallPrompt.css';
 
 function timeAgo(dateStr) {
@@ -23,7 +23,6 @@ export default function InstallPrompt() {
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isPwaInstalled, setIsPwaInstalled] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
-  const [testSending, setTestSending] = useState(false);
 
   // In-app notifications
   const [notifications, setNotifications] = useState([]);
@@ -61,18 +60,6 @@ export default function InstallPrompt() {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') { setShowInstallBanner(false); setDeferredPrompt(null); }
-  };
-
-  const handleTestNotification = async () => {
-    setTestSending(true);
-    try {
-      await pushAPI.send({ userId: user.id, title: 'FlyerBox Test', body: 'Push notifications are working!', url: '/' });
-    } catch (err) {
-      console.error('Test notification failed:', err);
-      alert('Failed to send test notification.');
-    } finally {
-      setTestSending(false);
-    }
   };
 
   const handleMarkRead = async (id) => {
@@ -163,9 +150,6 @@ export default function InstallPrompt() {
                 <>
                   {isSubscribed ? (
                     <div className="notif-footer-actions">
-                      <button className="notif-toggle-btn notif-test" onClick={handleTestNotification} disabled={testSending}>
-                        {testSending ? 'Sending...' : 'Test push'}
-                      </button>
                       <button className="notif-toggle-btn notif-off" onClick={unsubscribe} disabled={isLoading}>
                         {isLoading ? 'Turning off...' : 'Disable push'}
                       </button>
