@@ -134,6 +134,21 @@
   font-size: 12px;
 }
 
+.help-text.credit-warn {
+  color: #b45309;
+}
+
+.credit-usage {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.credit-usage.credit-exhausted {
+  color: #dc2626;
+  font-weight: 600;
+}
+
 .file-name {
   margin-top: 8px;
   font-size: 13px;
@@ -1120,4 +1135,85 @@
 /* Company Edit Modal */
 .company-edit-modal {
   max-width: 540px;
+}
+
+/* Credit History Modal */
+.credit-history-modal {
+  max-width: 760px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.credit-history-modal h2 {
+  margin-bottom: 16px;
+}
+
+.credit-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.credit-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 100px;
+}
+
+.credit-summary-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.credit-summary-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.credit-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.credit-filters select,
+.credit-filters input[type="month"] {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+  color: #374151;
+}
+
+.credit-txn-table-wrapper {
+  overflow-x: auto;
+}
+
+.credit-txn-table {
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.badge-neutral {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.help-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 4px;
+  display: block;
 }

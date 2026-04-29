@@ -74,4 +74,10 @@ export const pushAPI = {
   send: (data) => api.post("/push/send", data),
 };
 
+export const creditAPI = {
+  getSummary: (companyId) => api.get(`/credit/${companyId}/summary`),
+  getTransactions: (companyId, params) =>
+    api.get(`/credit/${companyId}/transactions`, { params }),
+};
+
 export default api;

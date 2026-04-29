@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { flyerAPI, companyAPI } from '../services/api';
+import { flyerAPI, companyAPI, creditAPI } from '../services/api';
 import MonthNavigator from '../components/MonthNavigator';
 import CompanySelector from '../components/CompanySelector';
 import { FLYER_TITLES } from '../constants/flyerTitles';
@@ -16,10 +16,60 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
   const [editGbpLink, setEditGbpLink] = useState('');
   const [editFlyerBox, setEditFlyerBox] = useState(false);
   const [editReviewBox, setEditReviewBox] = useState(false);
-  const [editReviewCredit, setEditReviewCredit] = useState(0);
+  const [topUpAmount, setTopUpAmount] = useState(0);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Credit history modal
+  const [creditCompany, setCreditCompany] = useState(null);
+  const [creditSummary, setCreditSummary] = useState(null);
+  const [creditTxns, setCreditTxns] = useState([]);
+  const [creditLoading, setCreditLoading] = useState(false);
+  const [creditTypeFilter, setCreditTypeFilter] = useState('');
+  const [creditMonthFilter, setCreditMonthFilter] = useState('');
+
+  const handleOpenCreditHistory = async (company) => {
+    setCreditCompany(company);
+    setCreditSummary(null);
+    setCreditTxns([]);
+    setCreditTypeFilter('');
+    setCreditMonthFilter('');
+    setCreditLoading(true);
+    try {
+      const [summaryRes, txnRes] = await Promise.all([
+        creditAPI.getSummary(company.id),
+        creditAPI.getTransactions(company.id, {}),
+      ]);
+      setCreditSummary(summaryRes.data);
+      setCreditTxns(txnRes.data);
+    } catch (e) {
+      console.error('Failed to load credit history', e);
+    } finally {
+      setCreditLoading(false);
+    }
+  };
+
+  const handleCreditFilterChange = async (type, month) => {
+    if (!creditCompany) return;
+    setCreditLoading(true);
+    try {
+      const params = {};
+      if (type) params.type = type;
+      if (month) {
+        const [y, m] = month.split('-');
+        params.from = `${y}-${m}-01`;
+        const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+        params.to = `${y}-${m}-${lastDay}`;
+      }
+      const res = await creditAPI.getTransactions(creditCompany.id, params);
+      setCreditTxns(res.data);
+    } catch (e) {
+      console.error('Failed to filter credit transactions', e);
+    } finally {
+      setCreditLoading(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -43,7 +93,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
     setEditGbpLink(company.gbpReviewLink || '');
     setEditFlyerBox(company.flyerBoxEnabled || false);
     setEditReviewBox(company.reviewBoxEnabled || false);
-    setEditReviewCredit(company.reviewMessageCredit || 0);
+    setTopUpAmount(0);
     setError('');
     setMessage('');
   };
@@ -62,7 +112,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
         GbpReviewLink: editGbpLink.trim(),
         FlyerBoxEnabled: editFlyerBox,
         ReviewBoxEnabled: editReviewBox,
-        ReviewMessageCredit: parseInt(editReviewCredit, 10) || 0,
+        TopUpAmount: parseInt(topUpAmount, 10) || 0,
       });
       setMessage('Company updated successfully!');
       setEditingCompany(null);
@@ -139,15 +189,20 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
               </div>
 
               <div className="form-group">
-                <label>Review Message Credit</label>
+                <label>Top-up Credits</label>
                 <input
                   type="number"
                   min="0"
-                  value={editReviewCredit}
-                  onChange={(e) => setEditReviewCredit(e.target.value)}
-                  placeholder="0 = unlimited"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  placeholder="Enter amount to add (e.g. 500)"
                 />
-                <small className="help-text">0 = unlimited. Used: {editingCompany.reviewMessagesSent || 0}</small>
+                <small className="help-text">
+                  Current balance: {editingCompany.reviewMessageBalance ?? 0}.
+                  {parseInt(topUpAmount, 10) > 0
+                    ? ` After top-up: ${(editingCompany.reviewMessageBalance ?? 0) + (parseInt(topUpAmount, 10) || 0)}.`
+                    : ' Leave at 0 to keep balance unchanged.'}
+                </small>
               </div>
 
               <div className="modal-actions">
@@ -157,6 +212,98 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                 <button type="button" onClick={() => setEditingCompany(null)} className="btn-cancel">Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Credit History Modal */}
+      {creditCompany && (
+        <div className="image-modal" onClick={() => setCreditCompany(null)}>
+          <div className="modal-content edit-modal company-edit-modal credit-history-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setCreditCompany(null)}>×</button>
+            <h2>Credit History — {creditCompany.name}</h2>
+
+            {creditSummary && (
+              <div className="credit-summary-row">
+                <div className="credit-summary-item">
+                  <span className="credit-summary-label">Balance</span>
+                  <span className="credit-summary-value">{creditSummary.balance}</span>
+                </div>
+                {creditSummary.lastTopUpDate && (
+                  <div className="credit-summary-item">
+                    <span className="credit-summary-label">Last Top-up</span>
+                    <span className="credit-summary-value">
+                      {new Date(creditSummary.lastTopUpDate).toLocaleDateString()} (+{creditSummary.lastTopUpAmount})
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="credit-filters">
+              <select
+                value={creditTypeFilter}
+                onChange={(e) => {
+                  setCreditTypeFilter(e.target.value);
+                  handleCreditFilterChange(e.target.value, creditMonthFilter);
+                }}
+              >
+                <option value="">All types</option>
+                <option value="CreditSet">Top-ups only</option>
+                <option value="MessageSent">Messages only</option>
+              </select>
+              <input
+                type="month"
+                value={creditMonthFilter}
+                onChange={(e) => {
+                  setCreditMonthFilter(e.target.value);
+                  handleCreditFilterChange(creditTypeFilter, e.target.value);
+                }}
+              />
+              {creditMonthFilter && (
+                <button className="btn-cancel" style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={() => {
+                  setCreditMonthFilter('');
+                  handleCreditFilterChange(creditTypeFilter, '');
+                }}>Clear month</button>
+              )}
+            </div>
+
+            {creditLoading ? (
+              <p style={{ textAlign: 'center', padding: '16px' }}>Loading...</p>
+            ) : creditTxns.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '16px', color: '#888' }}>No transactions found.</p>
+            ) : (
+              <div className="credit-txn-table-wrapper">
+                <table className="companies-table credit-txn-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Description</th>
+                      <th>Before → After</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {creditTxns.map((t) => (
+                      <tr key={t.id}>
+                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(t.createdAt).toLocaleString()}</td>
+                        <td>
+                          <span className={`feature-badge-sm ${t.type === 'CreditSet' ? 'badge-on' : 'badge-neutral'}`}>
+                            {t.type === 'CreditSet' ? 'Top-up' : 'Message'}
+                          </span>
+                        </td>
+                        <td>{t.description}</td>
+                        <td>
+                          {t.type === 'CreditSet'
+                            ? `${t.limitBefore ?? 0} → ${t.limitAfter ?? 0}`
+                            : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -193,12 +340,13 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                     </span>
                   </td>
                   <td>
-                    <span className="credit-usage">
-                      {company.reviewMessagesSent}/{company.reviewMessageCredit || '∞'}
+                    <span className={`credit-usage ${company.reviewMessageBalance <= 0 ? 'credit-exhausted' : ''}`}>
+                      {company.reviewMessageBalance}
                     </span>
                   </td>
                   <td className="td-company-actions">
                     <button className="edit-btn" onClick={() => handleEditCompany(company)}>Edit</button>
+                    <button className="btn-feedback" onClick={() => handleOpenCreditHistory(company)}>Credits</button>
                   </td>
                 </tr>
               ))}
@@ -221,12 +369,13 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                 <span className={`feature-badge-sm ${company.reviewBoxEnabled ? 'badge-on' : 'badge-off'}`}>
                   Review: {company.reviewBoxEnabled ? 'ON' : 'OFF'}
                 </span>
-                <span className="feature-badge-sm badge-neutral">
-                  Credits: {company.reviewMessagesSent}/{company.reviewMessageCredit || '∞'}
+                <span className={`feature-badge-sm ${company.reviewMessageBalance <= 0 ? 'badge-off' : 'badge-neutral'}`}>
+                  Credits: {company.reviewMessageBalance}
                 </span>
               </div>
               <div className="company-card-actions">
                 <button className="edit-btn" onClick={() => handleEditCompany(company)}>Edit</button>
+                <button className="btn-feedback" onClick={() => handleOpenCreditHistory(company)}>Credits</button>
               </div>
             </div>
           ))}
@@ -306,8 +455,7 @@ const AdminDashboard = () => {
         gbpReviewLink: item.GbpReviewLink || item.gbpReviewLink || '',
         flyerBoxEnabled: item.FlyerBoxEnabled ?? item.flyerBoxEnabled ?? false,
         reviewBoxEnabled: item.ReviewBoxEnabled ?? item.reviewBoxEnabled ?? false,
-        reviewMessagesSent: item.ReviewMessagesSent ?? item.reviewMessagesSent ?? 0,
-        reviewMessageCredit: item.ReviewMessageCredit ?? item.reviewMessageCredit ?? 0,
+        reviewMessageBalance: item.ReviewMessageBalance ?? item.reviewMessageBalance ?? 0,
       }));
 
       setCompanies(normalized);
@@ -334,6 +482,12 @@ const AdminDashboard = () => {
       fetchFlyers();
     }
   }, [companies, fetchFlyers]);
+
+  useEffect(() => {
+    if (activeTab === 'companies') {
+      fetchCompanies();
+    }
+  }, [activeTab]);
 
   const handleMonthChange = (year, month) => {
     setCurrentYear(year);
@@ -574,7 +728,7 @@ const AdminDashboard = () => {
                       type="radio"
                       value="predefined"
                       checked={titleMode === 'predefined'}
-                      onChange={() => setTitleMode('predefined')}
+                      onChange={() => { setTitleMode('predefined'); setTitle(''); }}
                     />
                     Choose from list
                   </label>
@@ -583,7 +737,7 @@ const AdminDashboard = () => {
                       type="radio"
                       value="custom"
                       checked={titleMode === 'custom'}
-                      onChange={() => setTitleMode('custom')}
+                      onChange={() => { setTitleMode('custom'); setTitle(''); }}
                     />
                     Custom title
                   </label>
