@@ -32,7 +32,7 @@ export default function InstallPrompt() {
     if (!user?.companyId) return;
     try {
       const { data } = await notificationAPI.getByCompany(user.companyId);
-      setNotifications(data);
+      setNotifications(data.filter((n) => !n.isRead));
     } catch {
       // silent — bell still works without notifications
     }
@@ -65,7 +65,7 @@ export default function InstallPrompt() {
   const handleMarkRead = async (id) => {
     try {
       await notificationAPI.markRead(id);
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch {}
   };
 
@@ -73,11 +73,11 @@ export default function InstallPrompt() {
     if (!user?.companyId) return;
     try {
       await notificationAPI.markAllRead(user.companyId);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications([]);
     } catch {}
   };
 
-  if (!user) return null;
+  if (!user || user.role === 'Admin') return null;
 
   return (
     <>
@@ -130,10 +130,10 @@ export default function InstallPrompt() {
                 notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`notif-item ${n.isRead ? '' : 'notif-unread'}`}
-                    onClick={() => !n.isRead && handleMarkRead(n.id)}
+                    className="notif-item notif-unread"
+                    onClick={() => handleMarkRead(n.id)}
                   >
-                    <div className="notif-item-dot">{!n.isRead && <span />}</div>
+                    <div className="notif-item-dot"><span /></div>
                     <div className="notif-item-content">
                       <p className="notif-item-title">{n.title}</p>
                       <p className="notif-item-body">{n.body}</p>
