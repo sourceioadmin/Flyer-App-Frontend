@@ -355,7 +355,7 @@ const ReviewBoxTab = ({ companyId }) => {
   // Auto-clear success message
   useEffect(() => {
     if (successMsg) {
-      const timer = setTimeout(() => setSuccessMsg(''), 4000);
+      const timer = setTimeout(() => setSuccessMsg(''), 12000);
       return () => clearTimeout(timer);
     }
   }, [successMsg]);
@@ -363,7 +363,7 @@ const ReviewBoxTab = ({ companyId }) => {
   // Auto-clear error message
   useEffect(() => {
     if (errorMsg) {
-      const timer = setTimeout(() => setErrorMsg(''), 6000);
+      const timer = setTimeout(() => setErrorMsg(''), 12000);
       return () => clearTimeout(timer);
     }
   }, [errorMsg]);
@@ -390,6 +390,7 @@ const ReviewBoxTab = ({ companyId }) => {
       const added = data.Added || [];
       const invalid = data.Invalid || [];
       const duplicates = data.Duplicates || [];
+      const creditExhausted = data.CreditExhausted || [];
 
       const newCustomers = added.map((item) => ({
         id: item.Id,
@@ -418,14 +419,22 @@ const ReviewBoxTab = ({ companyId }) => {
       if (duplicates.length > 0) {
         parts.push(`${duplicates.length} duplicate (skipped): ${duplicates.join(', ')}`);
       }
-      if (added.length === 0 && (invalid.length > 0 || duplicates.length > 0)) {
+      if (creditExhausted.length > 0) {
+        parts.push(`${creditExhausted.length} number${creditExhausted.length === 1 ? '' : 's'} could not be added — credit limit reached. Contact admin: ${creditExhausted.join(', ')}`);
+      }
+      if (added.length === 0 && (invalid.length > 0 || duplicates.length > 0 || creditExhausted.length > 0)) {
         parts.unshift('No new requests sent.');
       }
       setSuccessMsg(parts.length > 0 ? parts.join(' ') : 'Done.');
     } catch (err) {
       console.error('Failed to add review customer:', err);
       if (err.response?.status === 403) {
-        setFeatureDisabled(true);
+        const msg403 = err.response?.data?.message || '';
+        if (msg403.toLowerCase().includes('credit')) {
+          setErrorMsg('Review credits exhausted. Please contact admin to top up.');
+        } else {
+          setFeatureDisabled(true);
+        }
         return;
       }
       const msg = err.response?.data?.message || err.response?.data?.Message;
@@ -503,8 +512,18 @@ const ReviewBoxTab = ({ companyId }) => {
             {submitting ? 'Sending...' : 'Send Review Request'}
           </button>
         </form>
-        {successMsg && <div className="review-success-msg">{successMsg}</div>}
-        {errorMsg && <div className="review-error-msg">{errorMsg}</div>}
+        {successMsg && (
+          <div className="review-success-msg">
+            <span>{successMsg}</span>
+            <button className="msg-dismiss" onClick={() => setSuccessMsg('')}>×</button>
+          </div>
+        )}
+        {errorMsg && (
+          <div className="review-error-msg">
+            <span>{errorMsg}</span>
+            <button className="msg-dismiss" onClick={() => setErrorMsg('')}>×</button>
+          </div>
+        )}
       </div>
 
       {/* Automation Info */}
@@ -696,7 +715,7 @@ const SettingsTab = ({ companyId }) => {
   // Auto-clear success message
   useEffect(() => {
     if (successMsg) {
-      const timer = setTimeout(() => setSuccessMsg(''), 4000);
+      const timer = setTimeout(() => setSuccessMsg(''), 12000);
       return () => clearTimeout(timer);
     }
   }, [successMsg]);
@@ -704,7 +723,7 @@ const SettingsTab = ({ companyId }) => {
   // Auto-clear error message
   useEffect(() => {
     if (errorMsg) {
-      const timer = setTimeout(() => setErrorMsg(''), 6000);
+      const timer = setTimeout(() => setErrorMsg(''), 12000);
       return () => clearTimeout(timer);
     }
   }, [errorMsg]);
@@ -822,8 +841,18 @@ const SettingsTab = ({ companyId }) => {
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </form>
-        {successMsg && <div className="review-success-msg">{successMsg}</div>}
-        {errorMsg && <div className="review-error-msg">{errorMsg}</div>}
+        {successMsg && (
+          <div className="review-success-msg">
+            <span>{successMsg}</span>
+            <button className="msg-dismiss" onClick={() => setSuccessMsg('')}>×</button>
+          </div>
+        )}
+        {errorMsg && (
+          <div className="review-error-msg">
+            <span>{errorMsg}</span>
+            <button className="msg-dismiss" onClick={() => setErrorMsg('')}>×</button>
+          </div>
+        )}
       </div>
 
       {/* Feature Toggles - only visible to admins */}
