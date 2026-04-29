@@ -18,8 +18,7 @@ export const FLYER_TITLES = [
   'Raksha Bandhan',
   'Eid',
   'Makar Sankranti',
-  'Pongal',
-  'Custom'
+  'Pongal'
 ];
 
 export const MONTH_NAMES = [
