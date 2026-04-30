@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { flyerAPI, companyAPI, creditAPI } from '../services/api';
+import { flyerAPI, companyAPI, creditAPI, authAPI } from '../services/api';
 import MonthNavigator from '../components/MonthNavigator';
 import CompanySelector from '../components/CompanySelector';
 import { FLYER_TITLES } from '../constants/flyerTitles';
@@ -20,6 +20,54 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Create account modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ companyName: '', email: '', password: '', confirmPassword: '' });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+
+  const handleCreateAccount = async (e) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+
+    if (createForm.password !== createForm.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (createForm.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (!/\d/.test(createForm.password) || !/[a-zA-Z]/.test(createForm.password)) {
+      setError('Password must contain at least one letter and one number');
+      return;
+    }
+    if (!createForm.companyName.trim()) {
+      setError('Please enter a company name');
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      await authAPI.register({
+        companyName: createForm.companyName.trim(),
+        email: createForm.email,
+        password: createForm.password,
+        role: 'Company'
+      });
+      setShowCreateModal(false);
+      setCreateForm({ companyName: '', email: '', password: '', confirmPassword: '' });
+      setShowCreatePassword(false);
+      setMessage('Company account created successfully!');
+      onCompaniesChanged();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create account');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
 
   // Credit history modal
   const [creditCompany, setCreditCompany] = useState(null);
@@ -129,13 +177,14 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
 
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && editingCompany) {
-        setEditingCompany(null);
+      if (e.key === 'Escape') {
+        if (showCreateModal) setShowCreateModal(false);
+        if (editingCompany) setEditingCompany(null);
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [editingCompany]);
+  }, [editingCompany, showCreateModal]);
 
   return (
     <div className="companies-tab-container">
@@ -210,6 +259,82 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
                   {saving ? 'Saving...' : 'Update'}
                 </button>
                 <button type="button" onClick={() => setEditingCompany(null)} className="btn-cancel">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Company Account Modal */}
+      {showCreateModal && (
+        <div className="image-modal" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content edit-modal company-edit-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowCreateModal(false)}>×</button>
+            <h2>Create Company Account</h2>
+            <form onSubmit={handleCreateAccount}>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  placeholder="Enter email"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Company Name</label>
+                <input
+                  type="text"
+                  value={createForm.companyName}
+                  onChange={(e) => setCreateForm({ ...createForm, companyName: e.target.value })}
+                  placeholder="Enter company name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <div className="password-input-wrapper">
+                  <input
+                    type={showCreatePassword ? 'text' : 'password'}
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    placeholder="Create a password"
+                    required
+                  />
+                  <button type="button" className="password-toggle" onClick={() => setShowCreatePassword(!showCreatePassword)}>
+                    {showCreatePassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <small className="help-text">At least 6 characters with 1 letter and 1 number</small>
+              </div>
+              <div className="form-group">
+                <label>Confirm Password</label>
+                <div className="password-input-wrapper">
+                  <input
+                    type={showCreatePassword ? 'text' : 'password'}
+                    value={createForm.confirmPassword}
+                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                    placeholder="Confirm password"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="submit" className="btn-save" disabled={createLoading}>
+                  {createLoading ? 'Creating...' : 'Create Account'}
+                </button>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn-cancel">Cancel</button>
               </div>
             </form>
           </div>
@@ -309,7 +434,12 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
       )}
 
       <div className="companies-list-card">
-        <h2>All Companies ({companies.length})</h2>
+        <div className="companies-list-header">
+          <h2>All Companies ({companies.length})</h2>
+          <button className="upload-btn" onClick={() => { setShowCreateModal(true); setError(''); setMessage(''); }}>
+            + Create Account
+          </button>
+        </div>
 
         {/* Desktop Table */}
         <div className="companies-table-wrapper">
