@@ -437,7 +437,7 @@ const CompaniesTab = ({ companies, onCompaniesChanged }) => {
         <div className="companies-list-header">
           <h2>All Companies ({companies.length})</h2>
           <button className="upload-btn" onClick={() => { setShowCreateModal(true); setError(''); setMessage(''); }}>
-            + Create Account
+            + Create New Company
           </button>
         </div>
 
