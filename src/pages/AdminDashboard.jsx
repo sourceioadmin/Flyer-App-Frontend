@@ -554,6 +554,7 @@ const AdminDashboard = () => {
       await flyerAPI.uploadFlyer(formData);
 
       setMessage('Flyer uploaded successfully!');
+      setTimeout(() => setMessage(''), 3000);
       setTitle('');
       setForDate('');
       setFile(null);
